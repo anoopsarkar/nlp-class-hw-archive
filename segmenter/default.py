@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python2
 import sys, codecs, optparse, os
 
 optparser = optparse.OptionParser()
