@@ -1,0 +1,6 @@
+if [ -f $1.py ];
+then
+    python $1.py | python score-segments.py
+else
+   echo "usage: run <python-program>"
+fi
