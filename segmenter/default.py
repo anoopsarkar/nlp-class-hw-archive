@@ -24,8 +24,10 @@ class Pdist(dict):
         self.missingfn = missingfn or (lambda k, N: 1./N)
 
     def __call__(self, key):
-        if key in self: return log10(float(self[key])/float(self.N))
-        else: return self.missingfn(key, self.N)
+        if key in self: return float(self[key])/float(self.N)
+        #else: return self.missingfn(key, self.N)
+        elif len(key) == 1: return self.missingfn(key, self.N)
+        else: return None
 
 # the default segmenter does not use any probabilities, but you could ...
 Pw  = Pdist(opts.counts1w)
