@@ -64,7 +64,7 @@ def readTestFile(handle):
                     testContents[i].append( (opts.boundary, 'O') )
     return (testContents, referenceContents)
 
-def collectSpans(output):
+def collectSpans(output, msg):
     startChunk = { 
         'BB': True,
         'IB': True,
@@ -99,7 +99,7 @@ def collectSpans(output):
             if insideChunk:
                 spans[allChunks].add( (startIndex, endIndex, prevChunkType) )
                 spans[prevChunkType].add( (startIndex, endIndex) )
-                logging.info("%d:%d:%s:%s" % (startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
+                logging.info("%s:%d:%d:%s:%s" % (msg, startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
             prevChunkTag = 'O'
             prevChunkType = 'O'
             startIndex = i
@@ -107,14 +107,14 @@ def collectSpans(output):
             # conlleval does not give any credit to finding O phrases, so the following is commented out
             #spans[allChunks].add( (startIndex, endIndex+1, prevChunkType) )
             #spans[prevChunkType].add( (startIndex, endIndex+1) )
-            logging.info("%d:%d:%s:%s" % (startIndex, endIndex+1, prevChunkType, output[startIndex:endIndex+1]))
+            logging.info("%s:%d:%d:%s:%s" % (msg, startIndex, endIndex+1, prevChunkType, output[startIndex:endIndex+1]))
         else:
             (chunkTag, chunkType) = label.split('-')
             if insideChunk and (prevChunkType != chunkType or prevChunkTag + chunkTag in endChunk):
                 endIndex = i
                 spans[allChunks].add( (startIndex, endIndex, prevChunkType) )
                 spans[prevChunkType].add( (startIndex, endIndex) )
-                logging.info("%d:%d:%s:%s" % (startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
+                logging.info("%s:%d:%d:%s:%s" % (msg, startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
                 insideChunk = False
             if prevChunkType == '' or prevChunkType != chunkType or prevChunkTag + chunkTag in startChunk:
                 startIndex = i
@@ -122,7 +122,6 @@ def collectSpans(output):
                 insideChunk = True
             prevChunkTag = chunkTag
             prevChunkType = chunkType
-        endIndex = i
     return spans
 
 if opts.testfile is None:
@@ -138,7 +137,7 @@ if not opts.conlleval:
 def corpus_fmeasure(reference, test):
     if len(test.keys()) != len(reference.keys()):
         logging.error("Error: output and reference do not have identical number of lines")
-        return -1
+        return (-1,100)
 
     sentScore = defaultdict(Counter)
     numSents = 0
@@ -146,26 +145,31 @@ def corpus_fmeasure(reference, test):
     numTestPhrases = 0
     numReferencePhrases = 0
     accuracyCorrect = 0
+    accuracyTokens = 0
 
     for (i,j) in zip(test.keys(), reference.keys()):
         numSents += 1
-        numTokens += len(test[i])
+        numTokens += len(set(reference[j]))
         accuracyCorrect += len(set(test[i]) & set(reference[j]))
-        testSpans = collectSpans(test[i])
-        referenceSpans = collectSpans(reference[j]) 
+        testSpans = collectSpans(test[i], "tst")
+        referenceSpans = collectSpans(reference[j], "ref") 
         if allChunks not in testSpans:
             logging.error("could not find any spans in test data:\n%s" % (test[i]))
-            return -1
+            return (-1,100)
         if allChunks not in referenceSpans:
             logging.error("could not find any spans in reference data:\n%s" % (reference[j]))
-            return -1
+            return (-1,100)
         numTestPhrases += len(testSpans[allChunks])
         numReferencePhrases += len(referenceSpans[allChunks])
-        for key in referenceSpans.keys():
+        # check the union of the keys in test and reference 
+        for key in (set(referenceSpans.keys()) | set(testSpans.keys())):
             if key not in testSpans:
                 sentScore[key].update(correct=0, numGuessed=0, numCorrect=len(referenceSpans[key]))
-            intersection = referenceSpans[key] & testSpans[key]
-            sentScore[key].update(correct=len(intersection), numGuessed=len(testSpans[key]), numCorrect=len(referenceSpans[key]))
+            elif key not in referenceSpans:
+                sentScore[key].update(correct=0, numGuessed=len(testSpans[key]), numCorrect=0)
+            else:
+                intersection = referenceSpans[key] & testSpans[key]
+                sentScore[key].update(correct=len(intersection), numGuessed=len(testSpans[key]), numCorrect=len(referenceSpans[key]))
 
     print "processed %d sentences with %d tokens and %d phrases; found phrases: %d; correct phrases: %d" % \
         (numSents, numTokens, numReferencePhrases, numTestPhrases, sentScore[allChunks]['correct'])
@@ -184,12 +188,13 @@ def corpus_fmeasure(reference, test):
         else:
             fmeasure = (2*precision*recall/(precision+recall))
         if key == allChunks:
-            print "accuracy: %6.2f%%; precision: %6.2f%%; recall: %6.2f%%; FB1: %6.2f" % \
+            print "accuracy: %6.2f%%; precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f" % \
                 (accuracyCorrect/numTokens * 100., precision*100., recall*100., fmeasure*100.)
         else:
-            print "%17s: precision: %6.2f%%; recall: %6.2f%%; FB1: %6.2f %d" % \
-                (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'])
-    return fmeasure*100.
+            print "%17s: precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f; found: %6d; correct: %6d" % \
+                (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'], sentScore[key]['numCorrect'])
+    return (fmeasure*100., 100)
 
-print "Score: %.2f" % corpus_fmeasure(reference, test)
+(fscore, _) = corpus_fmeasure(reference, test)
+print "Score: %.2f" % fscore
 
