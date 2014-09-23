@@ -1,6 +1,6 @@
 from __future__ import division
 import optparse, sys, codecs, re, logging
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 optparser = optparse.OptionParser()
 optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
@@ -122,26 +122,27 @@ def collectSpans(output):
         endIndex = i
     return spans
 
-def precision(reference, test):
-    if len(test) == 0:
-        return None
-    else:
-        return float(len(reference & test)) / len(test)
-
-def recall(reference, test):
-    if len(reference) == 0:
-        return None
-    else:
-        return float(len(reference & test)) / len(reference)
-
-def fmeasure(reference, test, alpha=0.5):
-    p = precision(reference, test)
-    r = recall(reference, test)
-    if p is None or r is None:
-        return None
-    if p == 0 or r == 0:
-        return 0
-    return 1.0/(alpha/p + (1-alpha)/r)
+#def precision(reference, test):
+#    if len(test) == 0:
+#        return 0.
+#    else:
+#        logging.info("reference: %s" % reference)
+#        logging.info("test: %s" % test)
+#        logging.info("reference & test: %s" % (reference & test))
+#        return float(len(reference & test)) / len(test)
+#
+#def recall(reference, test):
+#    if len(reference) == 0:
+#        return 0.
+#    else:
+#        return float(len(reference & test)) / len(reference)
+#
+#def fmeasure(reference, test, alpha=0.5):
+#    p = precision(reference, test)
+#    r = recall(reference, test)
+#    if p == 0. or r == 0.:
+#        return (0.,0.,0.)
+#    return (p, r, (1.0/(alpha/p + (1-alpha)/r)))
 
 if opts.testfile is None:
     (test, reference) = readTestFile(sys.stdin)
@@ -157,8 +158,7 @@ if len(test.keys()) != len(reference.keys()):
     raise ValueError("Error: output and reference do not have identical number of lines")
 
 def corpus_fmeasure(reference, test):
-    score = 0 
-    total = 0
+    sentScore = defaultdict(Counter)
     for (i,j) in zip(test.keys(), reference.keys()):
         testSpans = collectSpans(test[i])
         referenceSpans = collectSpans(reference[j]) 
@@ -166,9 +166,15 @@ def corpus_fmeasure(reference, test):
             raise ValueError("could not find any spans in test data:\n%s" % (test[i]))
         if allChunks not in referenceSpans:
             raise ValueError("could not find any spans in reference data:\n%s" % (reference[j]))
-        score += fmeasure(referenceSpans[allChunks], testSpans[allChunks])
-        total += 1
-    return ((score/total)*100)
+        for key in testSpans.keys():
+            intersection = referenceSpans[key] & testSpans[key]
+            sentScore[key].update(correct=len(intersection), numGuessed=len(testSpans[key]), numCorrect=len(referenceSpans[key]))
+    for key in sorted(sentScore.keys()):
+        precision = sentScore[key]['correct']/sentScore[key]['numGuessed']
+        recall = sentScore[key]['correct']/sentScore[key]['numCorrect']
+        fmeasure = (2*precision*recall/(precision+recall))
+        print "%17s: precision: %6.2f%% recall: %6.2f%% FB1: %6.2f" %  (key, precision*100., recall*100., fmeasure*100.)
+    return fmeasure*100.
 
 print "Overall Score: %.2f" % corpus_fmeasure(reference, test)
 
