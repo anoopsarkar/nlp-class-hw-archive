@@ -153,8 +153,6 @@ if not opts.conlleval:
 if len(test.keys()) != len(reference.keys()):
     raise ValueError("Error: output and reference do not have identical number of lines")
 
-#print collectSpans(reference[2])
-#print collectSpans(test[2])
 def corpus_fmeasure(reference, test):
     score = 0 
     for (i,j) in zip(test.keys(), reference.keys()):
