@@ -1,5 +1,5 @@
 from __future__ import division
-import optparse, sys, codecs, re
+import optparse, sys, codecs, re, logging
 from collections import defaultdict
 
 optparser = optparse.OptionParser()
@@ -8,10 +8,13 @@ optparser.add_option("-r", "--referencefile", dest="referencefile", default="ref
 optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
 optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
 optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
+optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
 optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
 #optparser.add_option("-a", "--addrawtag", action="store_true", dest="raw", default=False, help="raw input: add B- as prefix to every token tag")
 (opts, _) = optparser.parse_args()
 numfeats = int(opts.numfeats)
+if opts.logfile is not None:
+    logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
 conlleval_error_msg = """
 change number of features using -n, line does not have correct number of fields: expecting conlleval format, number of features:%d\n%s
@@ -94,21 +97,21 @@ def collectSpans(output):
             if insideChunk:
                 spans[allChunks].add( (startIndex, endIndex, prevChunkType) )
                 spans[prevChunkType].add( (startIndex, endIndex) )
-                #print prevChunkType, output[startIndex:endIndex]
+                logging.info("%d:%d:%s:%s" % (startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
             prevChunkTag = 'O'
             prevChunkType = 'O'
             startIndex = i
             insideChunk = False
-            #spans[allChunks].add( (startIndex, endIndex, prevChunkType) )
-            #spans[prevChunkType].add( (startIndex, endIndex) )
-            #print prevChunkType, output[startIndex:endIndex+1]
+            #spans[allChunks].add( (startIndex, endIndex+1, prevChunkType) )
+            #spans[prevChunkType].add( (startIndex, endIndex+1) )
+            logging.info("%d:%d:%s:%s" % (startIndex, endIndex+1, prevChunkType, output[startIndex:endIndex+1]))
         else:
             (chunkTag, chunkType) = label.split('-')
             if insideChunk and (prevChunkType != chunkType or prevChunkTag + chunkTag in endChunk):
                 endIndex = i
                 spans[allChunks].add( (startIndex, endIndex, prevChunkType) )
                 spans[prevChunkType].add( (startIndex, endIndex) )
-                #print prevChunkType, output[startIndex:endIndex]
+                logging.info("%d:%d:%s:%s" % (startIndex, endIndex, prevChunkType, output[startIndex:endIndex]))
                 insideChunk = False
             if prevChunkType == '' or prevChunkType != chunkType or prevChunkTag + chunkTag in startChunk:
                 startIndex = i
@@ -155,6 +158,7 @@ if len(test.keys()) != len(reference.keys()):
 
 def corpus_fmeasure(reference, test):
     score = 0 
+    total = 0
     for (i,j) in zip(test.keys(), reference.keys()):
         testSpans = collectSpans(test[i])
         referenceSpans = collectSpans(reference[j]) 
@@ -163,7 +167,8 @@ def corpus_fmeasure(reference, test):
         if allChunks not in referenceSpans:
             raise ValueError("could not find any spans in reference data:\n%s" % (reference[j]))
         score += fmeasure(referenceSpans[allChunks], testSpans[allChunks])
-    return ((score/len(test))*100)
+        total += 1
+    return ((score/total)*100)
 
-print "Score: %.2f" % corpus_fmeasure(reference, test)
+print "Overall Score: %.2f" % corpus_fmeasure(reference, test)
 
