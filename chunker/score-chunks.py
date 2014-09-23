@@ -1,10 +1,10 @@
 from __future__ import division
-import optparse, sys, codecs, re, logging
+import optparse, sys, codecs, re, logging, os
 from collections import Counter, defaultdict
 
 optparser = optparse.OptionParser()
 optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
-optparser.add_option("-r", "--referencefile", dest="referencefile", default="reference", help="reference chunking")
+optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
 optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
 optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
 optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
@@ -135,9 +135,9 @@ if not opts.conlleval:
         (reference, _) = readTestFile(f)
 
 def corpus_fmeasure(reference, test):
-    if len(test.keys()) != len(reference.keys()):
-        logging.error("Error: output and reference do not have identical number of lines")
-        return (-1,100)
+    #if len(test.keys()) != len(reference.keys()):
+    #    logging.error("Error: output and reference do not have identical number of lines")
+    #    return (-1,100)
 
     sentScore = defaultdict(Counter)
     numSents = 0
@@ -147,17 +147,19 @@ def corpus_fmeasure(reference, test):
     accuracyCorrect = 0
     accuracyTokens = 0
 
-    for (i,j) in zip(test.keys(), reference.keys()):
+    #for (i,j) in zip(test.keys(), reference.keys()):
+    for i in reference.keys():
         numSents += 1
-        numTokens += len(set(reference[j]))
-        accuracyCorrect += len(set(test[i]) & set(reference[j]))
+        numTokens += len(set(reference[i]))
+        # count how many test token labels match the reference token labels using set intersection
+        accuracyCorrect += len(set(test[i]) & set(reference[i]))
         testSpans = collectSpans(test[i], "tst")
-        referenceSpans = collectSpans(reference[j], "ref") 
+        referenceSpans = collectSpans(reference[i], "ref") 
         if allChunks not in testSpans:
             logging.error("could not find any spans in test data:\n%s" % (test[i]))
             return (-1,100)
         if allChunks not in referenceSpans:
-            logging.error("could not find any spans in reference data:\n%s" % (reference[j]))
+            logging.error("could not find any spans in reference data:\n%s" % (reference[i]))
             return (-1,100)
         numTestPhrases += len(testSpans[allChunks])
         numReferencePhrases += len(referenceSpans[allChunks])
