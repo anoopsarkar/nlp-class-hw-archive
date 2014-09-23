@@ -10,7 +10,6 @@ optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval",
 optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
 optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
 optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
-#optparser.add_option("-a", "--addrawtag", action="store_true", dest="raw", default=False, help="raw input: add B- as prefix to every token tag")
 (opts, _) = optparser.parse_args()
 numfeats = int(opts.numfeats)
 if opts.logfile is not None:
@@ -43,15 +42,18 @@ def readTestFile(handle):
                     info = [ opts.boundary, opts.boundary, opts.outside ]
             if opts.conlleval:
                 if len(info) != numfeats + 2:
-                    raise ValueError(conlleval_error_msg % (numfeats,line))
+                    logging.error(conlleval_error_msg % (numfeats,line))
+                    return (testContents, referenceContents)
                 testContents[i].append( (info[0], info[len(info)-1]) )
                 referenceContents[i].append( (info[0], info[len(info)-2]) )
             else:
                 if len(info) != int(opts.numfeats) + 1:
-                    raise ValueError(test_error_msg % (numfeats,line))
+                    logging.error(test_error_msg % (numfeats,line))
+                    return (testContents, referenceContents)
                 testContents[i].append( (info[0], info[len(info)-1]) )
         if len(testContents[i]) == 0:
-            raise ValueError("zero length sentence found: %s" % (sentence))
+            logging.error("zero length sentence found: %s" % (sentence))
+            return (testContents, referenceContents)
         else:
             (lastWord, lastTag) = testContents[i][len(testContents[i])-1]
             if lastTag != 'O':
@@ -102,6 +104,7 @@ def collectSpans(output):
             prevChunkType = 'O'
             startIndex = i
             insideChunk = False
+            # conlleval does not give any credit to finding O phrases, so the following is commented out
             #spans[allChunks].add( (startIndex, endIndex+1, prevChunkType) )
             #spans[prevChunkType].add( (startIndex, endIndex+1) )
             logging.info("%d:%d:%s:%s" % (startIndex, endIndex+1, prevChunkType, output[startIndex:endIndex+1]))
@@ -122,28 +125,6 @@ def collectSpans(output):
         endIndex = i
     return spans
 
-#def precision(reference, test):
-#    if len(test) == 0:
-#        return 0.
-#    else:
-#        logging.info("reference: %s" % reference)
-#        logging.info("test: %s" % test)
-#        logging.info("reference & test: %s" % (reference & test))
-#        return float(len(reference & test)) / len(test)
-#
-#def recall(reference, test):
-#    if len(reference) == 0:
-#        return 0.
-#    else:
-#        return float(len(reference & test)) / len(reference)
-#
-#def fmeasure(reference, test, alpha=0.5):
-#    p = precision(reference, test)
-#    r = recall(reference, test)
-#    if p == 0. or r == 0.:
-#        return (0.,0.,0.)
-#    return (p, r, (1.0/(alpha/p + (1-alpha)/r)))
-
 if opts.testfile is None:
     (test, reference) = readTestFile(sys.stdin)
 else:
@@ -154,27 +135,61 @@ if not opts.conlleval:
     with open(opts.referencefile) as f:
         (reference, _) = readTestFile(f)
 
-if len(test.keys()) != len(reference.keys()):
-    raise ValueError("Error: output and reference do not have identical number of lines")
-
 def corpus_fmeasure(reference, test):
+    if len(test.keys()) != len(reference.keys()):
+        logging.error("Error: output and reference do not have identical number of lines")
+        return -1
+
     sentScore = defaultdict(Counter)
+    numSents = 0
+    numTokens = 0
+    numTestPhrases = 0
+    numReferencePhrases = 0
+    accuracyCorrect = 0
+
     for (i,j) in zip(test.keys(), reference.keys()):
+        numSents += 1
+        numTokens += len(test[i])
+        accuracyCorrect += len(set(test[i]) & set(reference[j]))
         testSpans = collectSpans(test[i])
         referenceSpans = collectSpans(reference[j]) 
         if allChunks not in testSpans:
-            raise ValueError("could not find any spans in test data:\n%s" % (test[i]))
+            logging.error("could not find any spans in test data:\n%s" % (test[i]))
+            return -1
         if allChunks not in referenceSpans:
-            raise ValueError("could not find any spans in reference data:\n%s" % (reference[j]))
-        for key in testSpans.keys():
+            logging.error("could not find any spans in reference data:\n%s" % (reference[j]))
+            return -1
+        numTestPhrases += len(testSpans[allChunks])
+        numReferencePhrases += len(referenceSpans[allChunks])
+        for key in referenceSpans.keys():
+            if key not in testSpans:
+                sentScore[key].update(correct=0, numGuessed=0, numCorrect=len(referenceSpans[key]))
             intersection = referenceSpans[key] & testSpans[key]
             sentScore[key].update(correct=len(intersection), numGuessed=len(testSpans[key]), numCorrect=len(referenceSpans[key]))
+
+    print "processed %d sentences with %d tokens and %d phrases; found phrases: %d; correct phrases: %d" % \
+        (numSents, numTokens, numReferencePhrases, numTestPhrases, sentScore[allChunks]['correct'])
+
     for key in sorted(sentScore.keys()):
-        precision = sentScore[key]['correct']/sentScore[key]['numGuessed']
-        recall = sentScore[key]['correct']/sentScore[key]['numCorrect']
-        fmeasure = (2*precision*recall/(precision+recall))
-        print "%17s: precision: %6.2f%% recall: %6.2f%% FB1: %6.2f" %  (key, precision*100., recall*100., fmeasure*100.)
+        if sentScore[key]['numGuessed'] == 0:
+            precision = 0.
+        else:
+            precision = sentScore[key]['correct']/sentScore[key]['numGuessed']
+        if sentScore[key]['numCorrect'] == 0:
+            recall = 0.
+        else:
+            recall = sentScore[key]['correct']/sentScore[key]['numCorrect']
+        if precision == 0. or recall == 0.:
+            fmeasure = 0.
+        else:
+            fmeasure = (2*precision*recall/(precision+recall))
+        if key == allChunks:
+            print "accuracy: %6.2f%%; precision: %6.2f%%; recall: %6.2f%%; FB1: %6.2f" % \
+                (accuracyCorrect/numTokens * 100., precision*100., recall*100., fmeasure*100.)
+        else:
+            print "%17s: precision: %6.2f%%; recall: %6.2f%%; FB1: %6.2f %d" % \
+                (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'])
     return fmeasure*100.
 
-print "Overall Score: %.2f" % corpus_fmeasure(reference, test)
+print "Score: %.2f" % corpus_fmeasure(reference, test)
 
