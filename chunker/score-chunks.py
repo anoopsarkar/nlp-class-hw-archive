@@ -2,28 +2,6 @@ from __future__ import division
 import optparse, sys, codecs, re, logging, os
 from collections import Counter, defaultdict
 
-optparser = optparse.OptionParser()
-optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
-optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
-optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
-optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
-optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
-optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
-optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
-optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
-(opts, _) = optparser.parse_args()
-numfeats = int(opts.numfeats)
-if opts.logfile is not None:
-    logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
-
-conlleval_error_msg = """
-change number of features using -n, line does not have correct number of fields: expecting conlleval format, number of features:%d\n%s
-"""
-
-test_error_msg = """
-change number of features using -n, line does not have correct number of fields: not expecting conlleval format, number of features:%d\n%s
-"""
-
 allChunks = '__ALL__'
 
 def readTestFile(handle):
@@ -31,6 +9,12 @@ def readTestFile(handle):
     contents = contents.rstrip()
     testContents = defaultdict(list)
     referenceContents = defaultdict(list)
+    conlleval_error_msg = "change number of features using -n, " + \
+        "line does not have correct number of fields: expecting conlleval format, " + \
+        "number of features:%d\n%s"
+    test_error_msg = "change number of features using -n, " + \
+        "line does not have correct number of fields: not expecting conlleval format, " + \
+        "number of features:%d\n%s"
     for (i,sentence) in enumerate(contents.split('\n\n')):
         for line in sentence.split('\n'):
             info = line.strip().split()
@@ -125,21 +109,11 @@ def collectSpans(output, msg):
             prevChunkType = chunkType
     return spans
 
-if opts.testfile is None:
-    (test, reference) = readTestFile(sys.stdin)
-else:
-    with open(opts.testfile) as f:
-        (test, reference) = readTestFile(f)
-
-if not opts.conlleval:
-    with open(opts.referencefile) as f:
-        (reference, _) = readTestFile(f)
-
 def corpus_fmeasure(reference, test):
     if opts.equalcheck:
         if len(test.keys()) != len(reference.keys()):
             logging.error("Error: output and reference do not have identical number of lines")
-            return (-1,100)
+            return -1
 
     sentScore = defaultdict(Counter)
     numSents = 0
@@ -155,17 +129,17 @@ def corpus_fmeasure(reference, test):
         numTokens += len(set(reference[i]))
         if i not in test:
             logging.error("Error: output and reference are mismatched: test: %d missing" % (i))
-            return (-1,100)
+            return -1
         # count how many test token labels match the reference token labels using set intersection
         accuracyCorrect += len(set(test[i]) & set(reference[i]))
         testSpans = collectSpans(test[i], "tst")
         referenceSpans = collectSpans(reference[i], "ref") 
         if allChunks not in testSpans:
             logging.error("could not find any spans in test data:\n%s" % (test[i]))
-            return (-1,100)
+            return -1
         if allChunks not in referenceSpans:
             logging.error("could not find any spans in reference data:\n%s" % (reference[i]))
-            return (-1,100)
+            return -1
         numTestPhrases += len(testSpans[allChunks])
         numReferencePhrases += len(referenceSpans[allChunks])
         # check the union of the keys in test and reference 
@@ -200,8 +174,31 @@ def corpus_fmeasure(reference, test):
         else:
             print "%17s: precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f; found: %6d; correct: %6d" % \
                 (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'], sentScore[key]['numCorrect'])
-    return (fmeasure*100., 100)
+    return fmeasure*100.
 
-(fscore, _) = corpus_fmeasure(reference, test)
-print "Score: %.2f" % fscore
+if __name__ == '__main__':
+    optparser = optparse.OptionParser()
+    optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
+    optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
+    optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
+    optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
+    optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
+    optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
+    optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
+    optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
+    (opts, _) = optparser.parse_args()
+    numfeats = int(opts.numfeats)
+    if opts.logfile is not None:
+        logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
+    if opts.testfile is None:
+        (test, reference) = readTestFile(sys.stdin)
+    else:
+        with open(opts.testfile) as f:
+            (test, reference) = readTestFile(f)
+
+    if not opts.conlleval:
+        with open(opts.referencefile) as f:
+            (reference, _) = readTestFile(f)
+
+    print "Score: %.2f" % corpus_fmeasure(reference, test)
