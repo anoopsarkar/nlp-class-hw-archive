@@ -32,9 +32,10 @@ import perc
 import sys, optparse, os
 from collections import defaultdict
 
-def perc_train(train_data, tagset):
+def perc_train(train_data, tagset, n):
     feat_vec = defaultdict(int)
     # insert your code here
+    # please limit the number of iterations of training to n iterations
     return feat_vec
 
 if __name__ == '__main__':
@@ -42,6 +43,7 @@ if __name__ == '__main__':
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
     optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
     optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-n", "--numiterations", dest="n", default=int(10), help="number of iterations of training")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
 
@@ -55,6 +57,6 @@ if __name__ == '__main__':
     print >>sys.stderr, "reading data ..."
     train_data = perc.read_labeled_data(opts.trainfile, opts.featfile)
     print >>sys.stderr, "done."
-    feat_vec = perc_train(train_data, tagset)
+    feat_vec = perc_train(train_data, tagset, int(opts.n))
     perc.perc_write_to_file(feat_vec, opts.modelfile)
 
