@@ -1,7 +1,6 @@
 
 import gzip # use compressed data files
-import copy
-import operator
+import copy, operator, optparse, sys, os
 
 # read the valid output tags for the task
 def read_tagset(tagsetfile):
@@ -22,21 +21,25 @@ def read_labeled_data(labelfile, featfile):
     while True:
         labeled_list = []
         feat_list = []
+        lab_w = ''
+        feat_line = ''
         while True:
-            lab_w = lab.readline()
+            lab_w = lab.readline().strip()
             if lab_w == '\n': break
             if lab_w == '': break
             lab_w = lab_w.strip()
             labeled_list.append(lab_w)
         while True:
-            feat_line = feat.readline()
+            feat_line = feat.readline().strip()
             if feat_line == '\n': break
             if feat_line == '': break
             (feat_keyword, feat_w) = feat_line.split() # throw away the FEAT keyword
             feat_w = feat_w.strip()
             feat_list.append(feat_w)
-        if lab_w == '': 
-            if feat_line != '': 
+        if len(labeled_list) == 0:
+        #if lab_w == '': 
+        #    if feat_line != '': 
+            if len(feat_list) != 0:
                 print >>sys.stderr, "files do not align"
                 print >>sys.stderr, lab_w, feat_line
             break
@@ -105,7 +108,8 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
             print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
             raise ValueError("features do not align with input sentence")
 
-        (word, postag) = labels[i].split()
+        fields = labels[i].split()
+        (word, postag) = (fields[0], fields[1])
         found_tag = False
         for tag in tagset:
             has_bigram_feat = False
@@ -171,7 +175,10 @@ def perc_testall(feat_vec, data, tagset):
 def perc_read_from_file(filename):
     import pickle
     pfile = open(filename, 'rb')
-    feat_vec = pickle.load(pfile)
+    try:
+        feat_vec = pickle.load(pfile)
+    except:
+        feat_vec = {}
     pfile.close()
     return feat_vec
 
@@ -182,18 +189,23 @@ def perc_write_to_file(feat_vec, filename):
     output.close()
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 5:
-        print >>sys.stderr, "usage: %s tagset labelfile featfile modelfile" % sys.argv[0]
-        sys.exit(-1)
+    optparser = optparse.OptionParser()
+    optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
+    optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "input.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "input.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
+    (opts, _) = optparser.parse_args()
+
     # each element in the feat_vec dictionary is:
     # key=feature_id value=weight
     feat_vec = {}
     tagset = []
     test_data = []
 
-    tagset = read_tagset(sys.argv[1])
-    test_data = read_labeled_data(sys.argv[2], sys.argv[3])
-    feat_vec = perc_read_from_file(sys.argv[4])
+    tagset = read_tagset(opts.tagsetfile)
+    print >>sys.stderr, "reading data ..."
+    test_data = read_labeled_data(opts.inputfile, opts.featfile)
+    print >>sys.stderr, "done."
+    feat_vec = perc_read_from_file(opts.modelfile)
     perc_testall(feat_vec, test_data, tagset)
 

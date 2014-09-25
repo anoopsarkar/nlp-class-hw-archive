@@ -29,25 +29,32 @@ Inside the perceptron training loop:
 """
 
 import perc
+import sys, optparse, os
+from collections import defaultdict
 
 def perc_train(train_data, tagset):
-    feat_vec = {}
+    feat_vec = defaultdict(int)
     # insert your code here
     return feat_vec
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 5:
-        print >>sys.stderr, "usage: %s tagset trainfile featfile modelfile" % sys.argv[0]
-        sys.exit(-1)
+    optparser = optparse.OptionParser()
+    optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
+    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
+    (opts, _) = optparser.parse_args()
+
     # each element in the feat_vec dictionary is:
     # key=feature_id value=weight
     feat_vec = {}
     tagset = []
     train_data = []
 
-    tagset = perc.read_tagset(sys.argv[1])
-    train_data = perc.read_labeled_data(sys.argv[2], sys.argv[3])
+    tagset = perc.read_tagset(opts.tagsetfile)
+    print >>sys.stderr, "reading data ..."
+    train_data = perc.read_labeled_data(opts.trainfile, opts.featfile)
+    print >>sys.stderr, "done."
     feat_vec = perc_train(train_data, tagset)
-    perc.perc_write_to_file(feat_vec, sys.argv[4])
+    perc.perc_write_to_file(feat_vec, opts.modelfile)
 
