@@ -134,11 +134,18 @@ def corpus_fmeasure(reference, test):
         accuracyCorrect += len(set(test[i]) & set(reference[i]))
         testSpans = collectSpans(test[i], "tst")
         referenceSpans = collectSpans(reference[i], "ref") 
-        if allChunks not in testSpans:
-            logging.error("could not find any spans in test data:\n%s" % (test[i]))
-            return -1
+        if len(referenceSpans) == 0:
+            continue
         if allChunks not in referenceSpans:
             logging.error("could not find any spans in reference data:\n%s" % (reference[i]))
+            return -1
+        if len(testSpans) == 0:
+            numReferencePhrases += len(referenceSpans[allChunks])
+            for key in set(referenceSpans.keys()):
+                sentScore[key].update(correct=0, numGuessed=0, numCorrect=len(referenceSpans[key]))
+            continue
+        if allChunks not in testSpans:
+            logging.error("could not find any spans in test data:\n%s" % (test[i]))
             return -1
         numTestPhrases += len(testSpans[allChunks])
         numReferencePhrases += len(referenceSpans[allChunks])
