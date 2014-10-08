@@ -10,6 +10,7 @@ optparser.add_option("-a", "--alignments", dest="alignment", default="a", help="
 optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="filename for logging output")
 optparser.add_option("-t", "--threshold", dest="threshold", default=0.5, type="float", help="threshold for alignment (default=0.5)")
 optparser.add_option("-n", "--num_display", dest="n", default=sys.maxint, type="int", help="number of alignments to display")
+optparser.add_option("-i", "--inputfile", dest="inputfile", default=None, help="input alignments file (default=sys.stdin)")
 (opts, _) = optparser.parse_args()
 f_data = "%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.french)
 e_data = "%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.english)
@@ -18,8 +19,10 @@ a_data = "%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.alignment)
 if opts.logfile:
     logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
+inp = sys.stdin if opts.inputfile is None else file(opts.inputfile)
+
 (size_a, size_s, size_a_and_s, size_a_and_p) = (0.0,0.0,0.0,0.0)
-for (i, (f, e, g, a)) in enumerate(zip(open(f_data), open(e_data), open(a_data), sys.stdin)):
+for (i, (f, e, g, a)) in enumerate(zip(open(f_data), open(e_data), open(a_data), inp)):
   fwords = f.strip().split()
   ewords = e.strip().split()
   sure = set([tuple(map(int, x.split("-"))) for x in filter(lambda x: x.find("-") > -1, g.strip().split())])
@@ -59,5 +62,5 @@ recall = size_a_and_s / size_s
 aer = 1 - ((size_a_and_s + size_a_and_p) / (size_a + size_s))
 sys.stdout.write("Precision = %f\nRecall = %f\nAER = %f\n" % (precision, recall, aer))
 
-for _ in (sys.stdin): # avoid pipe error
+for _ in inp: # avoid pipe error
   pass
