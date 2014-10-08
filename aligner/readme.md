@@ -21,11 +21,14 @@ Ignore the following warning:
 
 ## Score your alignment file
 
-You will see the precision, recall and the alignment error rate
-(AER) scores of your alignment. For precision and recall, the higher
-the better. For AER the lower the better.
+Evaluate the output alignments against the reference French-English
+alignments:
 
     python score-alignments.py -i dice.a
+
+You will see the precision, recall and the alignment error rate
+(AER) scores of your alignments. For precision and recall, the higher
+the better. For AER the lower the better.
 
 ## Do it all at once
 
@@ -41,13 +44,19 @@ data, but you will be uploading your alignment file for the provided
 German-English data. To upload the alignment using `default.py`:
 
     python default.py -p europarl -f de -n 10000 > output.a
+    head -1000 output.a > upload.a
+
+There is a size limit to your uploads to the leaderboard. Make sure
+you upload only the first 1000 lines of the alignment file to the
+leaderboard.
 
 When you develop your own aligner called `your-aligner.py` you have
 to make sure you use the same command line arguments as `default.py`:
 
     python your-aligner.py -p europarl -f de -n 10000 > output.a
+    head -1000 output.a > upload.a
 
-Then upload the file `output.a` to the leaderboard on
+Then upload the file `upload.a` to the leaderboard on
 [sfu-nlp-class.appspot.com](https://sfu-nlp-class.appspot.com)
 
 ## Options
