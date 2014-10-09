@@ -15,6 +15,7 @@ the training data.
 
     python check-alignments.py -i dice.a
 
+This will print out all the valid alignments in your input file.
 Ignore the following warning:
 
     WARNING:root:WARNING (check-alignments.py): bitext is longer than alignment
@@ -26,9 +27,12 @@ alignments:
 
     python score-alignments.py -i dice.a
 
-You will see the precision, recall and the alignment error rate
-(AER) scores of your alignments. For precision and recall, the higher
-the better. For AER the lower the better.
+You will see an ASCII-based graphical view of each alignment compared
+to the true alignment (guessed alignment versus sure and possible
+alignments from truth). At the end you will see the precision,
+recall and the alignment error rate (AER) scores of your alignments.
+For precision and recall, the higher the better. For AER the lower
+the better.
 
 ## Do it all at once
 
