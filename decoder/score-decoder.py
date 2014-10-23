@@ -111,7 +111,7 @@ for sent_num, (f, e) in enumerate(zip(french, english)):
     unaligned_sentences += 1
   maybe_write("\n\n",2)
 
-sys.stdout.write("\nTotal corpus log probability (LM+TM): %f\n" % total_logprob)
+sys.stdout.write("\nAverage corpus log probability (LM+TM): %f\n" % (total_logprob))
 if (len(french) != len(english)):
   sys.stdout.write("ERROR: French and English files are not the same length! Only complete output can be graded!\n")
 if unaligned_sentences > 0:

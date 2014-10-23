@@ -12,27 +12,38 @@ in `data/input`
 
     python default.py > output
 
-You can speed up the decoder by shrinking the search space
-using the `-s` option:
+You can expand the search space for the the decoder by expanding
+the number of items considered in beam search: using the `-s` option:
 
     python default.py -s 10 > output
 
 ## Score the decoder output
 
-How much worse is the output translation compared to the best
-**reachable** translation according to the model? The program
-`score-decoder.py` can be used to score the decoder output:
+How much worse is the output produced by your decoder compared to
+the best **reachable** translation according to the model? The
+program `score-decoder.py` can be used to score the decoder output:
 
     python score-decoder.py < output
 
-You can see a much more detailed output by changing the verbosity
-flag `-v`:
+The output shows the total log probability (language model and
+translation model) for each translation in your output and the total
+average log probability over all sentence pairs:
+
+    SENTENCE PAIR:
+    ( la motion est adoptée , et le rapport est adopté . )
+    ( motions deemed adopted , and the report agreed to )
+    TOTAL LM LOGPROB: -14.709625
+    ...........
+    TOTAL TM LOGPROB: 0.410658
+
+You can see a much more detailed output by changing the value of
+the verbosity flag `-v`:
 
     python score-decoder.py -v 2 < output
 
 ## Do it all at once
 
-    python default.py -s 10000 | python score-decoder.py
+    python default.py -s 100 | python score-decoder.py
 
 ## Leaderboard
 
