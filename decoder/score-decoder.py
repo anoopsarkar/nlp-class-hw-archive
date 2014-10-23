@@ -5,7 +5,7 @@ import models
 import math
 import logging
 
-# Three little utility functions:
+# Some utility functions:
 def bitmap(sequence):
   """ Generate a coverage bitmap for a sequence of indexes """
   return reduce(lambda x,y: x|y, map(lambda i: long('1'+'0'*i,2), sequence), 0)
@@ -13,6 +13,18 @@ def bitmap(sequence):
 def bitmap2str(b, n, on='o', off='.'):
   """ Generate a length-n string representation of bitmap b """
   return '' if n==0 else (on if b&1==1 else off) + bitmap2str(b>>1, n-1, on, off)
+
+def onbits(b):
+  """ Count number of on bits in a bitmap """
+  return 0 if b==0 else (1 if b&1==1 else 0) + onbits(b>>1)
+
+def prefix1bits(b):
+  """ Count number of bits encountered before first 0 """
+  return 0 if b&1==0 else 1+prefix1bits(b>>1)
+
+def last1bit(b):
+  """ Return index of highest order bit that is on """
+  return 0 if b==0 else 1+last1bit(b>>1)
 
 def logadd10(x,y):
   """ Addition in logspace (base 10): if x=log(a) and y=log(b), returns log(a+b) """
