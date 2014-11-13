@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-import optparse
-import sys
+import optparse, sys, os
 import bleu
 
 optparser = optparse.OptionParser()
-optparser.add_option("-r", "--reference", dest="reference", default="data/test.en", help="English reference sentences")
+optparser.add_option("-r", "--reference", dest="reference", default=os.path.join("data", "test.en"), help="English reference sentences")
 (opts,_) = optparser.parse_args()
 
 ref = [line.strip().split() for line in open(opts.reference)]
