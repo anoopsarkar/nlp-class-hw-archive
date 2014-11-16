@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import optparse, sys, os
+import optparse, sys, os, math
 from collections import namedtuple
 
 optparser = optparse.OptionParser()
@@ -11,7 +11,7 @@ w = None
 if opts.weights is not None:
   weights_file = sys.stdin if opts.weights is "-" else open(opts.weights)
   w = [float(line.strip()) for line in weights_file]
-  w = map(lambda x: 1.0 if x == float("-inf") or x == float("inf") or x == 0.0 else x, w)
+  w = map(lambda x: 1.0 if math.isnan(x) or x == float("-inf") or x == float("inf") or x == 0.0 else x, w)
   w = None if len(w) == 0 else w
 
 translation = namedtuple("translation", "english, score")
