@@ -21,7 +21,7 @@ for line in open(opts.nbest):
   if len(nbests) <= int(i):
     nbests.append([])
   features = [float(h) for h in features.strip().split()]
-  if w is None:
+  if w is None or len(w) != len(features):
     w = [1.0/len(features) for _ in xrange(len(features))]
   nbests[int(i)].append(translation(sentence.strip(), sum([x*y for x,y in zip(w, features)])))
 
