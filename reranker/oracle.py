@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-import optparse
-import sys
+import optparse, sys, os
 import bleu
 from collections import namedtuple
 
 translation_candidate = namedtuple("candidate", "sentence, scores, inverse_scores")
 optparser = optparse.OptionParser()
-optparser.add_option("-r", "--reference", dest="reference", default="data/test.en", help="English reference sentences")
-optparser.add_option("-n", "--nbest", dest="nbest", default="data/test.nbest", help="N-best lists")
+optparser.add_option("-r", "--reference", dest="reference", default=os.path.join("data", "test.en"), help="English reference sentences")
+optparser.add_option("-n", "--nbest", dest="nbest", default=os.path.join("data", "test.nbest"), help="N-best lists")
 (opts,_) = optparser.parse_args()
 
 ref = [line.strip().split() for line in open(opts.reference)]
