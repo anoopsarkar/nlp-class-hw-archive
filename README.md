@@ -9,4 +9,6 @@ Homework files distributed to students for my NLP class.
 - Homework 4: Translation Decoding `decoder`
 - Homework 5: Translation Reranking `reranker`
 
+Anoop Sarkar
+anoopsarkar.github.io
 
