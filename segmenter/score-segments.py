@@ -49,9 +49,15 @@ def corpus_fmeasure(reference, test):
     sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
     score = 0 
     for i in range(len(reference)):
+        reference_len, test_len = 0,0
+        for w in unicode(reference[i], 'utf-8').split():
+            reference_len += len(w)
+        for w in unicode(test[i], 'utf-8').split():
+            test_len += len(w)
         test_utf8 = set(unicode(test[i], 'utf-8').split())
         reference_utf8 = set(unicode(reference[i], 'utf-8').split())
-        if len(test_utf8) == 0: test_utf8 = set(['empty'])
+        if (reference_len != test_len) or (len(test_utf8) == 0): 
+            test_utf8 = set(['empty'])
         score += fmeasure(reference_utf8, test_utf8)
     #print "Score: %.2f" % ((score/len(test))*100)
     sys.stdout = old 
