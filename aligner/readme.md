@@ -9,7 +9,7 @@ is the default language pair for the following python programs.
 Use the default Dice alignment to align the first 10,000 lines of
 the training data.
 
-    python default.py -n 10000 > dice.a
+    python default.py -n 100000 > dice.a
 
 ## Check your alignment file
 
@@ -36,7 +36,7 @@ the better.
 
 ## Do it all at once
 
-    python default.py -n 10000 | python check-alignments.py | python score-alignments.py
+    python default.py -n 100000 | python check-alignments.py | python score-alignments.py
 
 ## Leaderboard
 
@@ -47,17 +47,17 @@ In this homework, you will be developing your aligner on French-English
 data, but you will be uploading your alignment file for the provided
 German-English data. To upload the alignment using `default.py`:
 
-    python default.py -p europarl -f de -n 10000 > output.a
+    python default.py -p europarl -f de -n 100000 > output.a
     head -1000 output.a > upload.a
 
 There is a size limit to your uploads to the leaderboard. Make sure
 you upload only the first 1000 lines of the alignment file to the
 leaderboard.
 
-When you develop your own aligner called `your-aligner.py` you have
+When you develop your own aligner called `answer/align.py` you have
 to make sure you use the same command line arguments as `default.py`:
 
-    python your-aligner.py -p europarl -f de -n 10000 > output.a
+    python answer/align.py -p europarl -f de -n 100000 > output.a
     head -1000 output.a > upload.a
 
 Then upload the file `upload.a` to the leaderboard on
