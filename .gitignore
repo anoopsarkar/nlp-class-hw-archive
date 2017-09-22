@@ -38,4 +38,4 @@ segmenter/answer/norvig-segment.py
 chunker/answer/chunk.py
 aligner/answer/align.py
 decoder/answer/decode.py
-
+.DS_Store
