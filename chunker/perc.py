@@ -82,10 +82,10 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     output = []
     labels = copy.deepcopy(labeled_list)
     # add in the start and end buffers for the context
-    labels.insert(0, 'B_-1 B_-1 B_-1')
-    labels.insert(0, 'B_-2 B_-2 B_-2') # first two 'words' are B_-2 B_-1
-    labels.append('B_+1 B_+1 B_+1')
-    labels.append('B_+2 B_+2 B_+2') # last two 'words' are B_+1 B_+2
+    labels.insert(0, '_B-1 _B-1 _B-1')
+    labels.insert(0, '_B-2 _B-2 _B-2') # first two 'words' are _B-2 _B-1
+    labels.append('_B+1 _B+1 _B+1')
+    labels.append('_B+2 _B+2 _B+2') # last two 'words' are _B+1 _B+2
 
     # size of the viterbi data structure
     N = len(labels)
@@ -96,9 +96,9 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
         viterbi[i] = {} # each column contains for each tag: a (value, backpointer) tuple
 
     # We do not tag the first two and last two words
-    # since we added B_-2, B_-1, B_+1 and B_+2 as buffer words 
-    viterbi[0]['B_-2'] = (0.0, '')
-    viterbi[1]['B_-1'] = (0.0, 'B_-2')
+    # since we added _B-2, _B-1, _B+1 and _B+2 as buffer words 
+    viterbi[0]['_B-2'] = (0.0, '')
+    viterbi[1]['_B-1'] = (0.0, '_B-2')
 
     # find the value of best_tag for each word i in the input
     feat_index = 0
