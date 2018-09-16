@@ -39,3 +39,8 @@ chunker/answer/chunk.py
 aligner/answer/align.py
 decoder/answer/decode.py
 .DS_Store
+venv
+__pycache__
+.DS_Store
+*.egg-info
+.ipynb_checkpoints
