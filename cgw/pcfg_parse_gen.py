@@ -2,8 +2,8 @@
 # Do not distribute this code to anybody
 # without permission from the author
 
-# pylint: disable=C0301,C0111,C0103
-# pylint: disable=R1702,R0912,R0902,R0913
+# pylint: disable=C0301,C0111,C0103,C0325
+# pylint: disable=R1702,R0912,R0902,R0913,R0914,R0915
 
 import sys
 import math
@@ -61,8 +61,9 @@ class Pcfg:
     # read in the file containing the weighted context-free grammar
     # the prob for each rule is computed on the fly based on the weights
     # normalized by the lhs symbol as per the usual definition of PCFGs
-    def __init__(self, filelist, startsym='TOP', verbose=0):
+    def __init__(self, filelist, startsym='TOP', allowed_words_file='allowed_words.txt', verbose=0):
         self.startsym = startsym
+        self.allowed_words = set(line.strip() for line in open(allowed_words_file))
         self.verbose = verbose
         self.last_rule = -1
         # each rule is indexed by a number i, where
@@ -103,7 +104,11 @@ class Pcfg:
                     raise ValueError("Error: unexpected line at line %d: %s"
                                      % (linenum, ' '.join(f)))
                 # count lhs left [right]
-                (count, lhs, left) = (int(f[0]), f[1], f[2])
+                try:
+                    count = int(f[0])
+                except:
+                    raise ValueError("Rule must be COUNT LHS RHS. Found {}".format(" ".join(f)))
+                (count, lhs, left) = (count, f[1], f[2])
                 if len(f) < 4:
                     right = self.unary
                 else:
@@ -193,6 +198,10 @@ class PcfgGenerator:
         self.restart_limit = None # can be set using the constructor
         self.restart_limit = limit
         self.gram = _gram
+        # num_samples is the number of sampled words from allowed_words
+        # if the grammar produces entirely invalid sentence
+        self.num_samples = 1
+        random.seed()
 
     def flatten_tree(self, tree):
         sentence = []
@@ -205,12 +214,26 @@ class PcfgGenerator:
                 sentence = [tree]
         return sentence
 
+    def check_allowed(self, sentence):
+        if not sentence:
+            print("ERROR: sampled sentence is empty", file=sys.stderr)
+            return random.sample(self.gram.allowed_words, self.num_samples)
+        new_sentence = []
+        for w in sentence:
+            if w not in self.gram.allowed_words:
+                print("ERROR: word {} was sampled but is not allowed".format(w), file=sys.stderr)
+                new_sentence.append(random.sample(self.gram.allowed_words, 1)[0])
+            else:
+                new_sentence.append(w)
+        assert(len(new_sentence) == len(sentence))
+        return new_sentence
+
     def generate(self, parsetree=False):
         rule = self.gen_pick_one(self.gram.startsym)
         if self.verbose:
             print("#getrule: {}".format(self.gram.get_rule(rule)), file=sys.stderr)
         gen_tree = self.gen_from_rule(rule)
-        return gen_tree if parsetree else self.flatten_tree(gen_tree)
+        return gen_tree if parsetree else self.check_allowed(self.flatten_tree(gen_tree))
 
     def gen_pick_one(self, lhs):
         r = random.random()
@@ -255,7 +278,7 @@ class CkyParse:
     def __init__(self, _gram, verbose=0, use_prior=True, use_pruning=True, beamsize=0.001, unseen_file="unseen.tags"):
         self.gram = _gram # PCFG to be used by the grammar
         self.verbose = verbose
-        if args.unseen_file != "":
+        if unseen_file != "":
             self.unseen = Unseen(unseen_file)
         else:
             self.unseen = None
@@ -272,7 +295,7 @@ class CkyParse:
         num_pruned = 0
         if (i, j) in self.chart:
             tbl = self.chart[i, j]
-            max_log_prob = None
+            max_log_prob = self._LOG_NINF
             best_lhs = None
 
             for lhs in tbl.keys():
@@ -386,7 +409,7 @@ class CkyParse:
                             left_log_prob = self.chart_get_log_prob(i, k, left)
                             right_log_prob = self.chart_get_log_prob(k, j, right)
                             for rule_number in self.gram.rule_iterator(left, right):
-                                (lhs, rhs, count, log_prob) = self.gram.get_rule(rule_number)
+                                (_, _, _, log_prob) = self.gram.get_rule(rule_number)
                                 back_pointer = (k, left, right)
                                 self.insert(i, j, lhs,
                                             log_prob + left_log_prob + right_log_prob,
@@ -470,27 +493,40 @@ class CkyParse:
                 return "(" + sym + " " + left_tree + " " + right_tree + ")"
         raise ValueError("cannot find span:", i, j, sym)
 
-    def parse_stream(self, handle):
-        if self.verbose:
-            print("parsing from stream: {}".format(handle), file=sys.stderr)
+    def parse_sentences(self, sentences):
         corpus_len = 0
         total_log_prob = None
-        for line in handle:
-            line = line[:-1]
-            input_sent = line.split()
+        for sent in sentences:
+            sent = sent.strip()
+            input_sent = sent.split()
             length = len(input_sent)
             if length <= 0:
                 continue
-            if line[0] == '#':
+            if sent[0] == '#':
                 if self.verbose:
-                    print("#skipping comment line in input_sent: {}".format(line), file=sys.stderr)
+                    print("#skipping comment line in input_sent: {}".format(sent), file=sys.stderr)
                 continue
             corpus_len += length
+            print("#parsing: {}".format(input_sent), file=sys.stderr)
             sent_log_prob = self.parse(input_sent)
             total_log_prob = sent_log_prob if total_log_prob is None else total_log_prob + sent_log_prob
             print(self.best_tree(input_sent))
         if corpus_len:
             print("#-cross entropy (bits/word): %g" % (total_log_prob / corpus_len), file=sys.stderr)
+
+    def parse_file(self, filename):
+        with open(filename, 'r') as fh:
+            self.parse_stream(fh)
+
+    def parse_stream(self, handle):
+        if self.verbose:
+            print("parsing from stream: {}".format(handle), file=sys.stderr)
+        sentences = []
+        for line in handle:
+            line = line.strip()
+            line = line[:-1]
+            sentences.append(line)
+        self.parse_sentences(sentences)
 
 # end of class CkyParse
 
@@ -508,15 +544,15 @@ if __name__ == '__main__':
                            help="generate mode; takes grammar and produces sentences if possible")
     argparser.add_argument("-n", "--numsentences", dest="num_sentences", type=int, default=20,
                            help="number of sentences to generate; in --generate mode")
-    argparser.add_argument("-r", "--prior", dest="use_prior", action="store_true",
+    argparser.add_argument("-r", "--prior", dest="use_prior", action="store_false",
                            help="use prior for pruning")
-    argparser.add_argument("-p", "--pruning", dest="use_pruning", action="store_true",
+    argparser.add_argument("-p", "--pruning", dest="use_pruning", action="store_false",
                            help="use prior for pruning")
     argparser.add_argument("-u", "--unseentags", dest="unseen_file", type=str, default="unseen.tags",
                            help="use prior for pruning")
     argparser.add_argument("-b", "--beam", dest="beam", type=float, default=0.0001,
                            help="use prior for pruning")
-    argparser.add_argument("-a", "--allowedwords", dest="allowedWordsFile", type=str,
+    argparser.add_argument("-a", "--allowedwords", dest="allowed_words_file", type=str,
                            default="allowed_words.txt",
                            help="only use this list of words when parsing and generating")
     argparser.add_argument("-g", "--grammars", nargs=argparse.ONE_OR_MORE, dest="grammar_files",
@@ -531,6 +567,12 @@ if __name__ == '__main__':
         sys.exit(2)
 
     if not args.grammar_files:
+        print("ERROR: grammar files required", file=sys.stderr)
+        argparser.print_help(sys.stderr)
+        sys.exit(2)
+
+    if not args.allowed_words_file:
+        print("ERROR: allowed words filename required", file=sys.stderr)
         argparser.print_help(sys.stderr)
         sys.exit(2)
 
@@ -539,8 +581,7 @@ if __name__ == '__main__':
         print("#mode: {}".format("parse" if args.parse_mode else "generate"), file=sys.stderr)
         print("#grammar: {}".format(" ".join(args.grammar_files)), file=sys.stderr)
 
-    random.seed()
-    gram = Pcfg(args.grammar_files, args.startsym, args.verbose)
+    gram = Pcfg(args.grammar_files, args.startsym, args.allowed_words_file, args.verbose)
     #print(gram)
 
     if args.generate_mode:

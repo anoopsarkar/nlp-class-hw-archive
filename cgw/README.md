@@ -16,6 +16,41 @@ is fixed.
     source venv/bin/activate
     pip3 install -r requirements.txt
 
+## Quick Start
+
+You can use the python notebook to see how to use the CFG parser /
+generator or use the command line as explained below.
+
+### Parser
+
+On the command line, to parse one sentence:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i
+
+To view the output tree in ASCII format:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i | python print_tree.py
+
+To view the output tree graphically:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i | python draw_tree.py
+
+To parse an entire file:
+
+    python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i < example_sentences.txt
+
+### Generator
+
+To generate one sentence from the grammar:
+
+    python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -o -n 1
+
+To generate more sentences change the value of `-n`.
+
+Error handling for bad grammars (you should see lots of errors of sampled words not in `allowed_word.txt`):
+
+    python3 pcfg_parse_gen.py -g S1.gr test/S2_missing_VerbT.gr test/Vocab_missing_Sir_Uther.gr -o -n 10000 > /dev/null
+
 ## Notation
 
 A context-free grammar (CFG) is defined using the following building blocks:
@@ -90,10 +125,9 @@ the various options for running the parser and generator using the
 following command.
 
 The parser has several options to speed up parsing, such as beam
-size and pruning. Most likely you will not need to use those options
-(unless your grammars are huge).
+size and pruning. 
 
-    python pcfg_parse_gen.py -h
+    python3 pcfg_parse_gen.py -h
 
 ### Parsing input
 
@@ -156,48 +190,63 @@ follows:
 We keep the value as negative cross entropy so that higher scores
 are better. 
 
-    python pcfg_parse_gen.py -i -g "*.gr" < example_sentences.txt
+On the command line, to parse one sentence:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i
+
+Which produces the following output:
+
+    #reading grammar file: S1.gr
+    #reading grammar file: S2.gr
+    #reading grammar file: Vocab.gr
+    (TOP (S1 (NP (Proper Arthur) ) (_VP (VP (VerbT is) (NP (Det the) (Nbar (Noun king) ))) (Punc .))) )
+	#-cross entropy (bits/word): -9.25325
+
+To parse an entire file:
+
+    python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i < example_sentences.txt
+
+Which produces the following output:
+
     #loading grammar files: S1.gr, S2.gr, Vocab.gr
     #reading grammar file: S1.gr
     #reading grammar file: S2.gr
     #reading grammar file: Vocab.gr
 
-    ... skipping the parse trees ...
+    ... skipping the parse trees ... 
 
-    #-cross entropy (bits/word): -10.0502
+	#-cross entropy (bits/word): -17.5749
+
+To view the output tree for a single sentence in ASCII format:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i | python print_tree.py
+
+To view the output tree for a single sentence graphically:
+
+    echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i | python draw_tree.py
 
 ### Generating output
 
 In order to aid your grammar development you can also generate
 sentences from the weighted grammar to test if your grammar is
-producing grammatical sentences with high probability. The following
-command samples 20 sentences from the `S1.gr,Vocab.gr` grammar
-files. 
+producing grammatical sentences with high probability. 
 
-    python pcfg_parse_gen.py -o 20 -g S1.gr,Vocab.gr
+To generate one sentence from the grammar:
+
+    python3 pcfg_parse_gen.py -g S1.gr Vocab.gr -o -n 1
+
+To generate more sentences change the value of `-n`.  
+
+The generator will not produce any words outside of the fixed
+vocabulary provided in `allowed_words.txt`.
+
+To see how the generator does error handling for bad grammars (you
+should see lots of errors of sampled words not in `allowed_word.txt`):
+
+    python3 pcfg_parse_gen.py -g S1.gr test/S2_missing_VerbT.gr test/Vocab_missing_Sir_Uther.gr -o -n 10000 > /dev/null
     #loading grammar files: S1.gr, Vocab.gr
     #reading grammar file: S1.gr
     #reading grammar file: Vocab.gr
-    every pound covers this swallow
-    no quest covers a weight
-    Uther Pendragon rides any quest
-    the chalice carries no corner .
-    any castle rides no weight
-    Sir Lancelot carries the land .
-    a castle is each land
-    every quest has any fruit .
-    no king carries the weight
-    that corner has every coconut
-    the castle is the sovereign
-    the king has this sun
-    that swallow has a king
-    another story rides no story
-    this defeater carries that sovereign
-    each quest on no winter carries the sovereign .
-    another king has no coconut through another husk .
-    a king rides another winter
-    that castle carries no castle
-    every horse covers the husk .
 
 ## Acknowledgements
 
