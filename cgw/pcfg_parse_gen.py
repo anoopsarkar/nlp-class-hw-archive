@@ -524,7 +524,6 @@ class CkyParse:
         sentences = []
         for line in handle:
             line = line.strip()
-            line = line[:-1]
             sentences.append(line)
         self.parse_sentences(sentences)
 

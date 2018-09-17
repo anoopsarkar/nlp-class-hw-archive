@@ -43,13 +43,13 @@ To parse an entire file:
 
 To generate one sentence from the grammar:
 
-    python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -o -n 1
+    python3 pcfg_parse_gen.py -g S1.gr Vocab.gr -o -n 1
 
 To generate more sentences change the value of `-n`.
 
 Error handling for bad grammars (you should see lots of errors of sampled words not in `allowed_word.txt`):
 
-    python3 pcfg_parse_gen.py -g S1.gr test/S2_missing_VerbT.gr test/Vocab_missing_Sir_Uther.gr -o -n 10000 > /dev/null
+    python3 pcfg_parse_gen.py -g S1.gr test/Vocab_missing_Sir_Uther.gr -o -n 10000 > /dev/null
 
 ## Notation
 
@@ -194,28 +194,9 @@ On the command line, to parse one sentence:
 
     echo "Arthur is the king ." | python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i
 
-Which produces the following output:
-
-    #reading grammar file: S1.gr
-    #reading grammar file: S2.gr
-    #reading grammar file: Vocab.gr
-    (TOP (S1 (NP (Proper Arthur) ) (_VP (VP (VerbT is) (NP (Det the) (Nbar (Noun king) ))) (Punc .))) )
-	#-cross entropy (bits/word): -9.25325
-
 To parse an entire file:
 
     python3 pcfg_parse_gen.py -g S1.gr S2.gr Vocab.gr -i < example_sentences.txt
-
-Which produces the following output:
-
-    #loading grammar files: S1.gr, S2.gr, Vocab.gr
-    #reading grammar file: S1.gr
-    #reading grammar file: S2.gr
-    #reading grammar file: Vocab.gr
-
-    ... skipping the parse trees ... 
-
-	#-cross entropy (bits/word): -17.5749
 
 To view the output tree for a single sentence in ASCII format:
 
@@ -244,9 +225,6 @@ To see how the generator does error handling for bad grammars (you
 should see lots of errors of sampled words not in `allowed_word.txt`):
 
     python3 pcfg_parse_gen.py -g S1.gr test/S2_missing_VerbT.gr test/Vocab_missing_Sir_Uther.gr -o -n 10000 > /dev/null
-    #loading grammar files: S1.gr, Vocab.gr
-    #reading grammar file: S1.gr
-    #reading grammar file: Vocab.gr
 
 ## Acknowledgements
 
