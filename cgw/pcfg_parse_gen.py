@@ -496,6 +496,7 @@ class CkyParse:
     def parse_sentences(self, sentences):
         corpus_len = 0
         total_log_prob = None
+        parses = []
         for sent in sentences:
             sent = sent.strip()
             input_sent = sent.split()
@@ -510,13 +511,18 @@ class CkyParse:
             print("#parsing: {}".format(input_sent), file=sys.stderr)
             sent_log_prob = self.parse(input_sent)
             total_log_prob = sent_log_prob if total_log_prob is None else total_log_prob + sent_log_prob
-            print(self.best_tree(input_sent))
+            best_tree = self.best_tree(input_sent)
+            parses.append(best_tree)
+            print(best_tree)
+        return parses
         if corpus_len:
             print("#-cross entropy (bits/word): %g" % (total_log_prob / corpus_len), file=sys.stderr)
 
     def parse_file(self, filename):
+        parses = []
         with open(filename, 'r') as fh:
-            self.parse_stream(fh)
+            parses = self.parse_stream(fh)
+        return parses
 
     def parse_stream(self, handle):
         if self.verbose:
@@ -525,7 +531,8 @@ class CkyParse:
         for line in handle:
             line = line.strip()
             sentences.append(line)
-        self.parse_sentences(sentences)
+        parses = self.parse_sentences(sentences)
+        return parses
 
 # end of class CkyParse
 
