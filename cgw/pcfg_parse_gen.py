@@ -87,7 +87,6 @@ class Pcfg:
             print("#reading grammar file: {}".format(filename), file=sys.stderr)
             linenum = 0
             for _line in open(filename, 'r'):
-                _line = _line[:-1] # remove newline
                 linenum += 1
                 if _line.find('#') != -1:
                     _line = _line[:_line.find('#')] # strip comments
@@ -118,6 +117,9 @@ class Pcfg:
                     continue
                 self.last_rule += 1
                 self.rules[self.last_rule] = (lhs, (left, right), count, None)
+
+                if self.verbose > 1:
+                    print("Rule: {}".format(self.rules[self.last_rule]), file=sys.stderr)
 
                 if lhs in self.lhs_rules:
                     self.lhs_rules[lhs].append(self.last_rule)
@@ -275,7 +277,7 @@ class PcfgGenerator:
 #
 class CkyParse:
 
-    def __init__(self, _gram, verbose=0, use_prior=True, use_pruning=True, beamsize=0.001, unseen_file="unseen.tags"):
+    def __init__(self, _gram, verbose=0, use_prior=True, use_pruning=True, beamsize=0.0001, unseen_file="unseen.tags"):
         self.gram = _gram # PCFG to be used by the grammar
         self.verbose = verbose
         if unseen_file != "":
@@ -409,7 +411,7 @@ class CkyParse:
                             left_log_prob = self.chart_get_log_prob(i, k, left)
                             right_log_prob = self.chart_get_log_prob(k, j, right)
                             for rule_number in self.gram.rule_iterator(left, right):
-                                (_, _, _, log_prob) = self.gram.get_rule(rule_number)
+                                (lhs, _, _, log_prob) = self.gram.get_rule(rule_number)
                                 back_pointer = (k, left, right)
                                 self.insert(i, j, lhs,
                                             log_prob + left_log_prob + right_log_prob,
@@ -494,6 +496,7 @@ class CkyParse:
         raise ValueError("cannot find span:", i, j, sym)
 
     def parse_sentences(self, sentences):
+        corpus_cross_entropy = self._LOG_NINF
         corpus_len = 0
         total_log_prob = None
         parses = []
@@ -514,9 +517,10 @@ class CkyParse:
             best_tree = self.best_tree(input_sent)
             parses.append(best_tree)
             print(best_tree)
-        return parses
         if corpus_len:
-            print("#-cross entropy (bits/word): %g" % (total_log_prob / corpus_len), file=sys.stderr)
+            corpus_cross_entropy = total_log_prob / corpus_len
+            print("#-cross entropy (bits/word): %g" % corpus_cross_entropy, file=sys.stderr)
+        return (corpus_cross_entropy, parses)
 
     def parse_file(self, filename):
         parses = []
