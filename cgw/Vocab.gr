@@ -4,7 +4,7 @@
 # handled by the S1 grammar.
 #
 # The weights given here may be changed, but no new vocabulary
-# items are to be added.
+# items outside of allowed_words.txt should be added.
 
 # Miscellaneous items that don't fit into any of our simple tags are
 # given to Misc.  You will want to develop your own tags for these!
