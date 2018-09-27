@@ -105,7 +105,7 @@ class Pcfg:
                 # count lhs left [right]
                 try:
                     count = int(f[0])
-                except:
+                except ValueError:
                     raise ValueError("Rule must be COUNT LHS RHS. Found {}".format(" ".join(f)))
                 (count, lhs, left) = (count, f[1], f[2])
                 if len(f) < 4:
@@ -231,10 +231,16 @@ class PcfgGenerator:
         return new_sentence
 
     def generate(self, parsetree=False):
-        rule = self.gen_pick_one(self.gram.startsym)
+        try:
+            rule = self.gen_pick_one(self.gram.startsym)
+        except ValueError:
+            return random.sample(self.gram.allowed_words, self.num_samples)
         if self.verbose:
             print("#getrule: {}".format(self.gram.get_rule(rule)), file=sys.stderr)
-        gen_tree = self.gen_from_rule(rule)
+        try:
+            gen_tree = self.gen_from_rule(rule)
+        except ValueError:
+            return random.sample(self.gram.allowed_words, self.num_samples)
         return gen_tree if parsetree else self.check_allowed(self.flatten_tree(gen_tree))
 
     def gen_pick_one(self, lhs):
@@ -512,9 +518,14 @@ class CkyParse:
                 continue
             corpus_len += length
             print("#parsing: {}".format(input_sent), file=sys.stderr)
-            sent_log_prob = self.parse(input_sent)
+            try:
+                sent_log_prob = self.parse(input_sent)
+                best_tree = self.best_tree(input_sent)
+            except ValueError:
+                print("#No parses found for: {}".format(" ".join(input_sent)), file=sys.stderr)
+                sent_log_prob = self._LOG_NINF
+                best_tree = self.default_tree(input_sent)
             total_log_prob = sent_log_prob if total_log_prob is None else total_log_prob + sent_log_prob
-            best_tree = self.best_tree(input_sent)
             parses.append(best_tree)
             print(best_tree)
         if corpus_len:
