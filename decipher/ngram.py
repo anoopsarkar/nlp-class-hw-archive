@@ -1,4 +1,4 @@
-import sys, bz2
+import sys, bz2, re
 from collections import namedtuple
 
 # # A language model scores sequences, and must account
@@ -13,9 +13,12 @@ from collections import namedtuple
 # logprob += lm.end(lm_state) # transition to </s>, can also use lm.score(lm_state, "</s>")[1]
 ngram_stats = namedtuple("ngram_stats", "logprob, backoff")
 class LM:
-    def __init__(self, filename):
-        sys.stderr.write("Reading language model from %s...\n" % (filename,))
+    def __init__(self, filename, n=6, verbose=False):
+        print("Reading language model from {}...\n".format(filename), file=sys.stderr)
         self.table = {}
+        self.n = n
+        self.history = n-1
+        self.verbose = verbose
         for line in bz2.open(filename, 'rt'):
             entry = line.strip().split("\t")
             if len(entry) > 1 and entry[0] != "ngram":
@@ -30,8 +33,7 @@ class LM:
         score = 0.0
         while len(ngram)> 0:
             if ngram in self.table:
-                # Below, use -5 for a 6-gram LM and -2 for a trigram LM, etc.
-                return (ngram[-5:], score + self.table[ngram].logprob)
+                return (ngram[-self.history:], score + self.table[ngram].logprob)
             else: #backoff
                 score += self.table[ngram[:-1]].backoff if len(ngram) > 1 else 0.0 
                 ngram = ngram[1:]
@@ -40,27 +42,65 @@ class LM:
     def end(self, state):
         return self.score(state, "</s>")[1]
 
+    def clean_seq(self, sequence):
+        return(sequence.translate(dict.fromkeys(map(ord, string.punctuation + ' '), None)).lower())
+
+    def maybe_write(self, msg):
+        if self.verbose:
+            print(msg, file=sys.stderr)
+
+    def score_seq(self, sequence):
+        lm_state = lm.begin()
+        lm_logprob = 0.0 
+        for token in list(self.clean_seq(sequence)):
+            self.maybe_write("state: {}".format(lm_state + (token,)))
+            (lm_state, logprob) = lm.score(lm_state, token)
+            lm_logprob += logprob
+            self.maybe_write("logprob={}".format(logprob))
+        lm_logprob += lm.end(lm_state)
+        return lm_logprob
+
+    def get_bitstring_spans(self, bitstring):
+        """get a list of spans that are contiguous and have 'o' in
+        the string position. ignore '.' positions"""
+        spans = { i.span()[0] : i.span()[1] for i in re.finditer('o', bitstring) }
+        return spans
+
+    def score_bitstring(self, sequence, bitstring):
+        """a bitstring is a string where 'o' represents an item to
+        be scored and '.' represents an item to be ignored while
+        scoring the sequence. the sequence string and bitstring
+        must be of the same length and the sequence cannot contain
+        punctuation or spaces"""
+        spans = self.get_bitstring_spans(bitstring)
+        seq_by_bits = [ sequence[i] if i in spans else '\t' for i in range(len(sequence)) ]
+        self.maybe_write("seq_by_bits: {}".format(seq_by_bits))
+        lm_state = lm.begin()
+        lm_logprob = 0.0 
+        for token in list(seq_by_bits):
+            if token == '\t':
+                lm_state = ()
+                continue
+            self.maybe_write("state: {}".format(lm_state + (token,)))
+            (lm_state, logprob) = lm.score(lm_state, token)
+            lm_logprob += logprob
+            self.maybe_write("logprob={}".format(logprob))
+        lm_logprob += lm.end(lm_state)
+        return lm_logprob
+
 if __name__ == '__main__':
     import sys, string
 
-    def maybe_write(s):
-        if True:
-            print(s, file=sys.stderr)
+    sequence = 'In a few cases, a multilingual artifact has been necessary to facilitate decipherment, the Rosetta Stone being the classic example. Statistical techniques provide another pathway to decipherment, as does the analysis of modern languages derived from ancient languages in which undeciphered texts are written. Archaeological and historical information is helpful in verifying hypothesized decipherments.'
 
-    sequence = 'In a few cases, a multilingual artifact has been necessary to facilitate decipherment, the Rosetta Stone being the classic example. Statistical techniques provide another pathway to decipherment, as does the analysis of modern languages derived from ancient languages in which undeciphered texts are written. Archaeological and historical information is helpful in verifying hypothesized decipherments.'.translate(dict.fromkeys(map(ord, string.punctuation + ' '), None)).lower()
+    lm = LM("6-gram-wiki-char.lm.bz2", n=6, verbose=True)
+
     print(sequence)
-    #sequence = 'jasbklfhjasjkldhf'
-    #sequence = 'this is the text.'
-
-    lm = LM("6-gram-wiki-char.lm.bz2")
-    lm_state = lm.begin()
-    lm_logprob = 0.0 
-    for token in list(sequence):
-        maybe_write("state: {}".format(lm_state + (token,)))
-        (lm_state, logprob) = lm.score(lm_state, token)
-        lm_logprob += logprob
-        maybe_write("logprob={}".format(logprob))
-    lm_logprob += lm.end(lm_state)
+    lm_logprob = lm.score_seq(sequence)
     print("TOTAL LM LOGPROB: {}\n".format(lm_logprob), file=sys.stderr)
 
+    print("TOTAL LM LOGPROB: {}\n".format(lm.score_seq('this is the text.')), file=sys.stderr)
+    print("TOTAL LM LOGPROB: {}\n".format(lm.score_seq('jasbklfhthejkldhf')), file=sys.stderr)
 
+    print(lm.get_bitstring_spans('..oo...ooo..')) 
+    print(lm.score_bitstring('thisisatest', 'oo...oo.ooo'))
