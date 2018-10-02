@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     sequence = 'In a few cases, a multilingual artifact has been necessary to facilitate decipherment, the Rosetta Stone being the classic example. Statistical techniques provide another pathway to decipherment, as does the analysis of modern languages derived from ancient languages in which undeciphered texts are written. Archaeological and historical information is helpful in verifying hypothesized decipherments.'
 
-    lm = LM("6-gram-wiki-char.lm.bz2", n=6, verbose=True)
+    lm = LM("data/6-gram-wiki-char.lm.bz2", n=6, verbose=True)
 
     print(sequence)
     lm_logprob = lm.score_seq(sequence)
