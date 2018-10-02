@@ -569,8 +569,8 @@ if __name__ == '__main__':
                            help="use prior for pruning")
     argparser.add_argument("-p", "--pruning", dest="use_pruning", action="store_false",
                            help="use prior for pruning")
-    argparser.add_argument("-u", "--unseentags", dest="unseen_file", type=str, default="unseen.tags",
-                           help="use prior for pruning")
+    argparser.add_argument("-u", "--unseentags", dest="unseen_file", type=str, default="",
+                           help="unseen tags filename")
     argparser.add_argument("-b", "--beam", dest="beam", type=float, default=0.0001,
                            help="use prior for pruning")
     argparser.add_argument("-a", "--allowedwords", dest="allowed_words_file", type=str,
