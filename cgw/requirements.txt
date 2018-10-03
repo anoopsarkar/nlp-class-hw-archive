@@ -2,7 +2,7 @@ numpy
 scipy
 matplotlib
 pandas
-jupyter
 sklearn
 nltk
+notebook
 nbimporter
