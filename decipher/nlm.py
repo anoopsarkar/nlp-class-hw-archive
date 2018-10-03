@@ -152,9 +152,9 @@ def clean_seq(sequence):
 if __name__ == '__main__':
     model = load_model("data/mlstm_ns.pt", cuda=False)
     sequence = 'In a few cases, a multilingual artifact has been necessary to facilitate decipherment, the Rosetta Stone being the classic example. Statistical techniques provide another pathway to decipherment, as does the analysis of modern languages derived from ancient languages in which undeciphered texts are written. Archaeological and historical information is helpful in verifying hypothesized decipherments.'
-    sequence = 'In a few cases, a multilingual artifact has been necessary.'
+    shorter_sequence = 'In a few cases, a multilingual artifact has been necessary.'
     s1 = 'zkxxuqxzpuq'
     s2 = 'thisisatest'
     print("score for \"{}\" = {}".format(s1, score_sequence(clean_seq(s1), model, cuda=False)))
     print("score for \"{}\" = {}".format(s2, score_sequence(clean_seq(s2), model, cuda=False)))
-    print("score for \"{}\" = {}".format(sequence, score_sequence_progress(clean_seq(sequence), model, cuda=False)))
+    print("score for \"{}\" = {}".format(shorter_sequence, score_sequence_progress(clean_seq(shorter_sequence), model, cuda=False)))
