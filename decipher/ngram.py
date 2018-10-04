@@ -100,10 +100,10 @@ if __name__ == '__main__':
 
     print(sequence)
     lm_logprob = lm.score_seq(sequence)
-    print("TOTAL LM LOGPROB: {}\n".format(lm_logprob), file=sys.stderr)
+    print("TOTAL LM LOGPROB: {}".format(lm_logprob), file=sys.stderr)
 
-    print("TOTAL LM LOGPROB: {}\n".format(lm.score_seq('this is the text.')), file=sys.stderr)
-    print("TOTAL LM LOGPROB: {}\n".format(lm.score_seq('jasbklfhthejkldhf')), file=sys.stderr)
+    print("TOTAL LM LOGPROB: {}".format(lm.score_seq('this is the text.')), file=sys.stderr)
+    print("TOTAL LM LOGPROB: {}".format(lm.score_seq('jasbklfhthejkldhf')), file=sys.stderr)
 
     print(lm.get_bitstring_spans('..oo...ooo..')) 
     print(lm.score_bitstring('thisisatest', 'oo...oo.ooo'))
