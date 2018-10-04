@@ -138,7 +138,7 @@ def score_sequence_progress(chars, model, cuda=False):
     score = score_first(chars[0], model, cuda)
     seq = chars[0]
     print("Calculating score for {}".format(chars), file=sys.stderr)
-    with tqdm(chars[1:], total=len(chars)) as pbar:
+    with tqdm(chars[1:], total=len(chars)-1) as pbar:
         pbar.set_description("Processing %s" % chars[0])
         for c in pbar:
             pbar.set_description("Processing %s" % c)
