@@ -63,8 +63,7 @@ class LM:
     def get_bitstring_spans(self, bitstring):
         """get a list of spans that are contiguous and have 'o' in
         the string position. ignore '.' positions"""
-        spans = { i.span()[0] : i.span()[1] for i in re.finditer('o', bitstring) }
-        return spans
+        return { i.span()[0] : i.span()[1] for i in re.finditer('o', bitstring) }
 
     def score_bitstring(self, sequence, bitstring):
         """a bitstring is a string where 'o' represents an item to
@@ -73,12 +72,16 @@ class LM:
         must be of the same length and the sequence cannot contain
         punctuation or spaces"""
         spans = self.get_bitstring_spans(bitstring)
+
+        # we use the tab character \t to represent the positions 
+        # to skip when scoring the sequence
         seq_by_bits = [ sequence[i] if i in spans else '\t' for i in range(len(sequence)) ]
         self.maybe_write("seq_by_bits: {}".format(seq_by_bits))
+
         lm_state = lm.begin()
         lm_logprob = 0.0 
         for token in list(seq_by_bits):
-            if token == '\t':
+            if token == '\t': # should we skip this token?
                 lm_state = ()
                 continue
             self.maybe_write("state: {}".format(lm_state + (token,)))
