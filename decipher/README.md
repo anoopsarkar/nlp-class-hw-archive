@@ -20,6 +20,10 @@ To use the pytorch code in `nlm.py` you should also do:
 
 Take a look at the Python notebook: `decipher.ipynb`
 
+The file `data/cipher.txt` contains the ciphertext.
+
+`mlstm_ns.pt`
+
 ## ngram Language Model
 
 The ngram language model file is in `data/6-gram-wiki-char.lm.bz2`
@@ -31,6 +35,11 @@ subsequences using the code in `ngram.py`. To see how it works, run
 it and examine the source:
 
     python3 ngram.py
+
+The LM is in the file `data/6-gram-wiki-char.lm.bz2` which was
+trained on the data in `data/default.wiki.txt.bz2`. Note that all
+punctuations and spaces are stripped. The start of each sequence
+is `<s>` and end of each sequence is `</s>`.
 
 ## Neural Language Model
 
@@ -54,3 +63,4 @@ see some speed improvement.
 
 The logprob scores from the neural LM are not comparable to the
 ngram LM, but they are internally consistent.
+
