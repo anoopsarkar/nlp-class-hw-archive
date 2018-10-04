@@ -41,6 +41,9 @@ trained on the data in `data/default.wiki.txt.bz2`. Note that all
 punctuations and spaces are stripped. The start of each sequence
 is `<s>` and end of each sequence is `</s>`.
 
+The file `ngram.py` contains some useful functions that will help you write
+the `SCORE` function as needed by the beam search algorithm.
+
 ## Neural Language Model
 
 Download the character neural LM model file from this link:
