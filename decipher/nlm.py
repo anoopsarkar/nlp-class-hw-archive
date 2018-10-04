@@ -137,7 +137,7 @@ def score_sequence_progress(chars, model, cuda=False):
         raise ValueError("Error: empty sequence")
     score = score_first(chars[0], model, cuda)
     seq = chars[0]
-    print("Calculating score for {}".format(chars), file=sys.stderr)
+    print("Calculating score for \"{}\"".format(chars), file=sys.stderr)
     with tqdm(chars[1:], total=len(chars)-1) as pbar:
         pbar.set_description("Processing %s" % chars[0])
         for c in pbar:
