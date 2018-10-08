@@ -3,7 +3,7 @@ from collections import namedtuple
 
 # # A language model scores sequences, and must account
 # # for both beginning and end of each sequence. Example API usage:
-# lm = models.LM(filename)
+# lm = LM(filename, n=6, verbose=False)
 # sentence = "This is a test ."
 # lm_state = lm.begin() # initial state is always <s>
 # logprob = 0.0
