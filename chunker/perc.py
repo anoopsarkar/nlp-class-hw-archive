@@ -12,7 +12,7 @@ def read_tagset(tagsetfile):
 
 # for each train/test example, read the set of features 
 # used for determining the output label
-def read_labeled_data(labelfile, featfile):
+def read_labeled_data(labelfile, featfile, verbose=False):
     labeled_data = []
     lab = gzip.open(labelfile, 'r') if labelfile[-3:] == '.gz' \
         else open(labelfile, 'r')
@@ -20,7 +20,8 @@ def read_labeled_data(labelfile, featfile):
         else open(featfile, 'r')
     i = 0
     while True:
-        print("reading data[{}]".format(i))
+        if verbose:
+            print("reading data[{}]".format(i), file=sys.stderr)
         labeled_list = []
         feat_list = []
         lab_w = ''
@@ -204,7 +205,7 @@ if __name__ == '__main__':
 
     tagset = read_tagset(opts.tagsetfile)
     print("reading data ...", file=sys.stderr)
-    test_data = read_labeled_data(opts.inputfile, opts.featfile)
+    test_data = read_labeled_data(opts.inputfile, opts.featfile, verbose=False)
     print("done.", file=sys.stderr)
     feat_vec = perc_read_from_file(opts.modelfile)
     perc_testall(feat_vec, test_data, tagset)
