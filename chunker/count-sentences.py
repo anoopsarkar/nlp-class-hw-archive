@@ -20,11 +20,11 @@ if __name__ == '__main__':
     (opts, _) = optparser.parse_args()
     if opts.inputfile is None:
         logging.warning("using standard input")
-        print countSentences(sys.stdin)
+        print(countSentences(sys.stdin))
     elif opts.inputfile[-3:] == '.gz':
-        with gzip.open(opts.inputfile) as f:
-            print countSentences(f)
+        with gzip.open(opts.inputfile, 'r') as f:
+            print(countSentences(f))
     else:
-        with open(opts.inputfile) as f:
-            print countSentences(f)
+        with open(opts.inputfile, 'r') as f:
+            print(countSentences(f))
 

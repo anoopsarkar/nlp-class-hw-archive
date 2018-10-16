@@ -1,24 +1,28 @@
 
-# Phrasal Chunking, Homework 2
+# Phrasal Chunking
+
+## Setup
+
+    python3 -m venv venv
+    source venv/bin/activate
+    pip3 install -r requirements.txt
 
 ## Training phase
 
-    python default.py > default.model
+    python3 default.py > default.model
 
 ## Testing and Evaluation phase
 
-    python perc.py -m default.model > output
-    python score-chunks.py < output
-
-Then upload the file `output` to the leaderboard on sfu-nlp-class.appspot.com
+    python3 perc.py -m default.model > output
+    python3 score-chunks.py < output
 
 OR
 
-    python perc.py -m default.model | python score-chunks.py
+    python3 perc.py -m default.model | python3 score-chunks.py
 
 ## Options
 
-    python default.py -h
+    python3 default.py -h
 
 This shows the different options you can use in your training
 algorithm implementation.  In particular the -n option will let you

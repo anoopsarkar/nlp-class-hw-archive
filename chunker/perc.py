@@ -40,8 +40,8 @@ def read_labeled_data(labelfile, featfile):
         #if lab_w == '': 
         #    if feat_line != '': 
             if len(feat_list) != 0:
-                print >>sys.stderr, "files do not align"
-                print >>sys.stderr, lab_w, feat_line
+                print("files do not align", file=sys.stderr)
+                print(lab_w, feat_line, file=sys.stderr)
             break
         else:
             labeled_data.append( (labeled_list, feat_list) )
@@ -66,7 +66,7 @@ def feats_for_word(start_index, feat_list):
 
 def get_maxvalue(viterbi_dict):
     maxvalue = (None, None) # maxvalue has tuple (tag, value)
-    for tag in viterbi_dict.keys():
+    for tag in list(viterbi_dict.keys()):
         value = viterbi_dict[tag] # value is (score, backpointer)
         if maxvalue[1] is None:
             maxvalue = (tag, value[0])
@@ -105,7 +105,7 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     for i in range(2, N-2):
         (feat_index, feats) = feats_for_word(feat_index, feat_list)
         if len(feats) == 0:
-            print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
+            print(" ".join(labels), " ".join(feat_list), "\n", file=sys.stderr)
             raise ValueError("features do not align with input sentence")
 
         fields = labels[i].split()
@@ -169,8 +169,8 @@ def perc_testall(feat_vec, data, tagset):
     default_tag = tagset[0]
     for (labeled_list, feat_list) in data:
         output = perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
-        print "\n".join(conll_format(output, labeled_list))
-        print
+        print("\n".join(conll_format(output, labeled_list)))
+        print()
 
 def perc_read_from_file(filename):
     import pickle
@@ -191,8 +191,8 @@ def perc_write_to_file(feat_vec, filename):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "input.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "input.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "dev.txt"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "dev.feats"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
 
@@ -203,9 +203,9 @@ if __name__ == '__main__':
     test_data = []
 
     tagset = read_tagset(opts.tagsetfile)
-    print >>sys.stderr, "reading data ..."
+    print("reading data ...", file=sys.stderr)
     test_data = read_labeled_data(opts.inputfile, opts.featfile)
-    print >>sys.stderr, "done."
+    print("done.", file=sys.stderr)
     feat_vec = perc_read_from_file(opts.modelfile)
     perc_testall(feat_vec, test_data, tagset)
 

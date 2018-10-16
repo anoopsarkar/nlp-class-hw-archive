@@ -1,4 +1,4 @@
-from __future__ import division
+
 import optparse, sys, codecs, re, logging, os
 from collections import Counter, defaultdict
 
@@ -111,7 +111,7 @@ def collectSpans(output, msg):
 
 def corpus_fmeasure(reference, test):
     if opts.equalcheck:
-        if len(test.keys()) != len(reference.keys()):
+        if len(list(test.keys())) != len(list(reference.keys())):
             logging.error("Error: output and reference do not have identical number of lines")
             return -1
 
@@ -124,7 +124,7 @@ def corpus_fmeasure(reference, test):
     accuracyTokens = 0
 
     #for (i,j) in zip(test.keys(), reference.keys()):
-    for i in reference.keys():
+    for i in list(reference.keys()):
         numSents += 1
         numTokens += len(set(reference[i]))
         if i not in test:
@@ -159,8 +159,8 @@ def corpus_fmeasure(reference, test):
                 intersection = referenceSpans[key] & testSpans[key]
                 sentScore[key].update(correct=len(intersection), numGuessed=len(testSpans[key]), numCorrect=len(referenceSpans[key]))
 
-    print "processed %d sentences with %d tokens and %d phrases; found phrases: %d; correct phrases: %d" % \
-        (numSents, numTokens, numReferencePhrases, numTestPhrases, sentScore[allChunks]['correct'])
+    print("processed %d sentences with %d tokens and %d phrases; found phrases: %d; correct phrases: %d" % \
+        (numSents, numTokens, numReferencePhrases, numTestPhrases, sentScore[allChunks]['correct']))
 
     for key in sorted(sentScore.keys()):
         if sentScore[key]['numGuessed'] == 0:
@@ -176,11 +176,11 @@ def corpus_fmeasure(reference, test):
         else:
             fmeasure = (2*precision*recall/(precision+recall))
         if key == allChunks:
-            print "accuracy: %6.2f%%; precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f" % \
-                (accuracyCorrect/numTokens * 100., precision*100., recall*100., fmeasure*100.)
+            print("accuracy: %6.2f%%; precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f" % \
+                (accuracyCorrect/numTokens * 100., precision*100., recall*100., fmeasure*100.))
         else:
-            print "%17s: precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f; found: %6d; correct: %6d" % \
-                (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'], sentScore[key]['numCorrect'])
+            print("%17s: precision: %6.2f%%; recall: %6.2f%%; F1: %6.2f; found: %6d; correct: %6d" % \
+                (key, precision*100., recall*100., fmeasure*100., sentScore[key]['numGuessed'], sentScore[key]['numCorrect']))
     return fmeasure*100.
 
 if __name__ == '__main__':
@@ -208,4 +208,4 @@ if __name__ == '__main__':
         with open(opts.referencefile) as f:
             (reference, _) = readTestFile(f)
 
-    print "Score: %.2f" % corpus_fmeasure(reference, test)
+    print("Score: %.2f" % corpus_fmeasure(reference, test))
