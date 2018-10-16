@@ -22,7 +22,7 @@ if __name__ == '__main__':
         logging.warning("using standard input")
         print(countSentences(sys.stdin))
     elif opts.inputfile[-3:] == '.gz':
-        with gzip.open(opts.inputfile, 'r') as f:
+        with gzip.open(opts.inputfile, 'rt') as f:
             print(countSentences(f))
     else:
         with open(opts.inputfile, 'r') as f:
