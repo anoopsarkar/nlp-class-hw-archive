@@ -3,6 +3,20 @@ import optparse, sys, codecs, re, logging, os
 from collections import Counter, defaultdict
 
 allChunks = '__ALL__'
+optparser = optparse.OptionParser()
+optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
+optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
+optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
+optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
+optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
+optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
+optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
+optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
+(opts, _) = optparser.parse_args()
+numfeats = int(opts.numfeats)
+if opts.logfile is not None:
+    logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
+
 
 def readTestFile(handle):
     contents = re.sub(r'\n\s*\n', r'\n\n', handle.read())
@@ -184,20 +198,6 @@ def corpus_fmeasure(reference, test):
     return fmeasure*100.
 
 if __name__ == '__main__':
-    optparser = optparse.OptionParser()
-    optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
-    optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
-    optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
-    optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
-    optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
-    optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
-    optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
-    optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
-    (opts, _) = optparser.parse_args()
-    numfeats = int(opts.numfeats)
-    if opts.logfile is not None:
-        logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
-
     if opts.testfile is None:
         (test, reference) = readTestFile(sys.stdin)
     else:

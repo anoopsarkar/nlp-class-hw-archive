@@ -14,11 +14,11 @@
 ## Testing and Evaluation phase
 
     python3 perc.py -m default.model > output
-    python3 score-chunks.py < output
+    python3 score_chunks.py < output
 
 OR
 
-    python3 perc.py -m default.model | python3 score-chunks.py
+    python3 perc.py -m default.model | python3 score_chunks.py
 
 ## Options
 
