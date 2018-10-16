@@ -18,21 +18,20 @@ def read_labeled_data(labelfile, featfile):
         else open(labelfile, 'r')
     feat = gzip.open(featfile, 'r') if featfile[-3:] == '.gz' \
         else open(featfile, 'r')
+    i = 0
     while True:
+        print("reading data[{}]".format(i))
         labeled_list = []
         feat_list = []
         lab_w = ''
         feat_line = ''
         while True:
             lab_w = lab.readline().strip()
-            if lab_w == '\n': break
-            if lab_w == '': break
-            lab_w = lab_w.strip()
+            if not lab_w: break
             labeled_list.append(lab_w)
         while True:
             feat_line = feat.readline().strip()
-            if feat_line == '\n': break
-            if feat_line == '': break
+            if not feat_line: break
             (feat_keyword, feat_w) = feat_line.split() # throw away the FEAT keyword
             feat_w = feat_w.strip()
             feat_list.append(feat_w)
@@ -45,6 +44,7 @@ def read_labeled_data(labelfile, featfile):
             break
         else:
             labeled_data.append( (labeled_list, feat_list) )
+        i += 1
     lab.close()
     feat.close()
     return labeled_data
