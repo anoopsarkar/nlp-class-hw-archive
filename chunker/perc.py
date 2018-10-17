@@ -14,9 +14,9 @@ def read_tagset(tagsetfile):
 # used for determining the output label
 def read_labeled_data(labelfile, featfile, verbose=False):
     labeled_data = []
-    lab = gzip.open(labelfile, 'r') if labelfile[-3:] == '.gz' \
+    lab = gzip.open(labelfile, 'rt') if labelfile[-3:] == '.gz' \
         else open(labelfile, 'r')
-    feat = gzip.open(featfile, 'r') if featfile[-3:] == '.gz' \
+    feat = gzip.open(featfile, 'rt') if featfile[-3:] == '.gz' \
         else open(featfile, 'r')
     i = 0
     while True:
