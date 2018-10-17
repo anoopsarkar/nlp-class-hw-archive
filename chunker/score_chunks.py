@@ -3,22 +3,8 @@ import optparse, sys, codecs, re, logging, os
 from collections import Counter, defaultdict
 
 allChunks = '__ALL__'
-optparser = optparse.OptionParser()
-optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
-optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference250.txt"), help="reference chunking")
-optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
-optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
-optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
-optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
-optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
-optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
-(opts, _) = optparser.parse_args()
-numfeats = int(opts.numfeats)
-if opts.logfile is not None:
-    logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
-
-def readTestFile(handle):
+def readTestFile(handle, boundary, outside, conlleval, numfeats):
     contents = re.sub(r'\n\s*\n', r'\n\n', handle.read())
     contents = contents.rstrip()
     testContents = defaultdict(list)
@@ -34,19 +20,19 @@ def readTestFile(handle):
             info = line.strip().split()
             if len(info) < 1:
                 continue
-            if info[0] == opts.boundary:
-                if opts.conlleval:
-                    info = [ opts.boundary, opts.boundary, opts.outside, opts.outside ]
+            if info[0] == boundary:
+                if conlleval:
+                    info = [ boundary, boundary, outside, outside ]
                 else:
-                    info = [ opts.boundary, opts.boundary, opts.outside ]
-            if opts.conlleval:
+                    info = [ boundary, boundary, outside ]
+            if conlleval:
                 if len(info) != numfeats + 2:
                     logging.error(conlleval_error_msg % (numfeats,line))
                     return (testContents, referenceContents)
                 testContents[i].append( (info[0], info[len(info)-1]) )
                 referenceContents[i].append( (info[0], info[len(info)-2]) )
             else:
-                if len(info) != int(opts.numfeats) + 1:
+                if len(info) != int(numfeats) + 1:
                     logging.error(test_error_msg % (numfeats,line))
                     return (testContents, referenceContents)
                 testContents[i].append( (info[0], info[len(info)-1]) )
@@ -56,11 +42,11 @@ def readTestFile(handle):
         else:
             (lastWord, lastTag) = testContents[i][len(testContents[i])-1]
             if lastTag != 'O':
-                if opts.conlleval:
-                    testContents[i].append( (opts.boundary, 'O') )
-                    referenceContents[i].append( (opts.boundary, 'O') )
+                if conlleval:
+                    testContents[i].append( (boundary, 'O') )
+                    referenceContents[i].append( (boundary, 'O') )
                 else:
-                    testContents[i].append( (opts.boundary, 'O') )
+                    testContents[i].append( (boundary, 'O') )
     return (testContents, referenceContents)
 
 def collectSpans(output, msg):
@@ -123,8 +109,8 @@ def collectSpans(output, msg):
             prevChunkType = chunkType
     return spans
 
-def corpus_fmeasure(reference, test):
-    if opts.equalcheck:
+def corpus_fmeasure(reference, test, equalcheck):
+    if equalcheck:
         if len(list(test.keys())) != len(list(reference.keys())):
             logging.error("Error: output and reference do not have identical number of lines")
             return -1
@@ -198,14 +184,27 @@ def corpus_fmeasure(reference, test):
     return fmeasure*100.
 
 if __name__ == '__main__':
+    optparser = optparse.OptionParser()
+    optparser.add_option("-t", "--testfile", dest="testfile", default=None, help="output from your chunker program")
+    optparser.add_option("-r", "--referencefile", dest="referencefile", default=os.path.join("data", "reference500.txt"), help="reference chunking")
+    optparser.add_option("-n", "--numfeatures", dest="numfeats", default=2, help="number of features, default is two: word and POS tag")
+    optparser.add_option("-c", "--conlleval", action="store_true", dest="conlleval", default=False, help="behave like the conlleval perl script with a single testfile input that includes the true label followed by the predicted label as the last two columns of input in testfile or sys.stdin")
+    optparser.add_option("-e", "--equalcheck", action="store_true", dest="equalcheck", default=False, help="check if reference and output from chunker are the same length")
+    optparser.add_option("-b", "--boundary", dest="boundary", default="-X-", help="boundary label that can be used to mark the end of a sentence")
+    optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="log file name")
+    optparser.add_option("-o", "--outsidelabel", dest="outside", default="O", help="chunk tag for words outside any labeled chunk")
+    (opts, _) = optparser.parse_args()
+    numfeats = int(opts.numfeats)
+    if opts.logfile is not None:
+        logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
     if opts.testfile is None:
-        (test, reference) = readTestFile(sys.stdin)
+        (test, reference) = readTestFile(sys.stdin, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
     else:
         with open(opts.testfile) as f:
-            (test, reference) = readTestFile(f)
+            (test, reference) = readTestFile(f, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
 
     if not opts.conlleval:
         with open(opts.referencefile) as f:
-            (reference, _) = readTestFile(f)
+            (reference, _) = readTestFile(f, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
 
-    print("Score: %.2f" % corpus_fmeasure(reference, test))
+    print("Score: %.2f" % corpus_fmeasure(reference, test, opts.equalcheck))
