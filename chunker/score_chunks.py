@@ -4,8 +4,8 @@ from collections import Counter, defaultdict
 
 allChunks = '__ALL__'
 
-def readTestFile(handle, boundary, outside, conlleval, numfeats):
-    contents = re.sub(r'\n\s*\n', r'\n\n', handle.read())
+def readTestFile(file_contents, boundary, outside, conlleval, numfeats):
+    contents = re.sub(r'\n\s*\n', r'\n\n', file_contents)
     contents = contents.rstrip()
     testContents = defaultdict(list)
     referenceContents = defaultdict(list)
@@ -198,13 +198,13 @@ if __name__ == '__main__':
     if opts.logfile is not None:
         logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
     if opts.testfile is None:
-        (test, reference) = readTestFile(sys.stdin, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
+        (test, reference) = readTestFile(sys.stdin.read(), opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
     else:
         with open(opts.testfile) as f:
-            (test, reference) = readTestFile(f, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
+            (test, reference) = readTestFile(f.read(), opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
 
     if not opts.conlleval:
         with open(opts.referencefile) as f:
-            (reference, _) = readTestFile(f, opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
+            (reference, _) = readTestFile(f.read(), opts.boundary, opts.outside, opts.conlleval, opts.numfeats)
 
     print("Score: %.2f" % corpus_fmeasure(reference, test, opts.equalcheck))
