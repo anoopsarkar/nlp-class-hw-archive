@@ -40,7 +40,7 @@ for a in inp:
   sys.stdout.write(a)
 
 try:
-  if f_data.next():
+  if next(f_data):
     logging.warning("WARNING (%s): bitext is longer than alignment\n" % sys.argv[0])
 except StopIteration:
   pass
