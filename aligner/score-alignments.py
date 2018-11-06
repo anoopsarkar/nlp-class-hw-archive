@@ -9,7 +9,7 @@ optparser.add_option("-f", "--french", dest="french", default="fr", help="suffix
 optparser.add_option("-a", "--alignments", dest="alignment", default="a", help="suffix of gold alignments filename (default=a)")
 optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="filename for logging output")
 optparser.add_option("-t", "--threshold", dest="threshold", default=0.5, type="float", help="threshold for alignment (default=0.5)")
-optparser.add_option("-n", "--num_display", dest="n", default=sys.maxint, type="int", help="number of alignments to display")
+optparser.add_option("-n", "--num_display", dest="n", default=sys.maxsize, type="int", help="number of alignments to display")
 optparser.add_option("-i", "--inputfile", dest="inputfile", default=None, help="input alignments file (default=sys.stdin)")
 (opts, _) = optparser.parse_args()
 f_data = "%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.french)
@@ -19,7 +19,7 @@ a_data = "%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.alignment)
 if opts.logfile:
     logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
-inp = sys.stdin if opts.inputfile is None else file(opts.inputfile)
+inp = sys.stdin if opts.inputfile is None else open(opts.inputfile, 'r')
 
 (size_a, size_s, size_a_and_s, size_a_and_p) = (0.0,0.0,0.0,0.0)
 for (i, (f, e, g, a)) in enumerate(zip(open(f_data), open(e_data), open(a_data), inp)):

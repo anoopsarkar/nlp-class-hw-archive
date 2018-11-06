@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import optparse, sys, os, logging
 from collections import defaultdict
+from itertools import islice
 
 optparser = optparse.OptionParser()
 optparser.add_option("-d", "--datadir", dest="datadir", default="data", help="data directory (default=data)")
@@ -18,7 +19,7 @@ if opts.logfile:
     logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
 sys.stderr.write("Training with Dice's coefficient...")
-bitext = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
+bitext = [[sentence.strip().split() for sentence in pair] for pair in islice(zip(open(f_data), open(e_data)), opts.num_sents)]
 f_count = defaultdict(int)
 e_count = defaultdict(int)
 fe_count = defaultdict(int)

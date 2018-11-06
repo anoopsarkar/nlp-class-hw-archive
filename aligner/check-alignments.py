@@ -9,13 +9,13 @@ optparser.add_option("-f", "--french", dest="french", default="fr", help="suffix
 optparser.add_option("-l", "--logfile", dest="logfile", default=None, help="filename for logging output (default=None)")
 optparser.add_option("-i", "--inputfile", dest="inputfile", default=None, help="input alignments file (default=sys.stdin)")
 (opts, args) = optparser.parse_args()
-f_data = file("%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.french))
-e_data = file("%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.english))
+f_data = open("%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.french), 'r')
+e_data = open("%s.%s" % (os.path.join(opts.datadir, opts.fileprefix), opts.english), 'r')
     
 if opts.logfile:
     logging.basicConfig(filename=opts.logfile, filemode='w', level=logging.INFO)
 
-inp = sys.stdin if opts.inputfile is None else file(opts.inputfile)
+inp = sys.stdin if opts.inputfile is None else open(opts.inputfile, 'r')
 
 for (n, (f, e, a)) in enumerate(zip(f_data, e_data, inp)):
   size_f = len(f.strip().split())
