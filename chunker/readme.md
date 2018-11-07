@@ -25,10 +25,10 @@ OR
     python3 default.py -h
 
 This shows the different options you can use in your training
-algorithm implementation.  In particular the -n option will let you
+algorithm implementation.  In particular the -e option will let you
 run your algorithm for less or more iterations to let your code run
 faster with less accuracy or slower with more accuracy. You must
-implement the -n option in your code so that we are able to run
+implement the -e option in your code so that we are able to run
 your code with different number of iterations.
 
 ## Baseline
