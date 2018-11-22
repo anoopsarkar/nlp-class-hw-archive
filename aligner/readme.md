@@ -1,8 +1,14 @@
-
 # Word Alignment
 
 You will be developing your aligner on the French-English data which
 is the default language pair for the following python3 programs.
+
+## Setup
+
+    python3 -m venv venv
+    source venv/bin/activate
+    pip3 install -r requirements.txt
+
 
 ## Training phase
 
